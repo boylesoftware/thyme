@@ -15,7 +15,7 @@
 		<version>1.1.2</version>
 	</parent>
 
-	<groupId>com.boylesoftware.web</groupId>
+	<groupId>com.boylesoftware.thyme</groupId>
 	<artifactId>thyme</artifactId>
 	<version>1.0.0-rc-3-SNAPSHOT</version>
 
