@@ -17,7 +17,7 @@
 
 	<groupId>com.boylesoftware.web</groupId>
 	<artifactId>thyme</artifactId>
-	<version>1.0.0-rc-2</version>
+	<version>1.0.0-rc-3-SNAPSHOT</version>
 
 	<name>Thyme Framework</name>
 	<description>Boyle Software web-application framework.</description>
@@ -47,7 +47,7 @@
 	<scm>
 		<connection>scm:git:https://github.com/boylesoftware/thyme.git</connection>
 		<developerConnection>scm:git:git@github.com:boylesoftware/thyme.git</developerConnection>
-		<tag>thyme-1.0.0-rc-2</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<repositories>
