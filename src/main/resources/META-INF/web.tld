@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Framework JSP tag library descriptor.
+  -
+  - author: Lev Himmelfarb
+  -
+  - Copyright 2013 Boyle Software, Inc.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+ -->
+
+<taglib xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://www.oracle.com/webfolder/technetwork/jsc/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+	version="2.1">
+
+	<tlib-version>1.0</tlib-version>
+
+	<short-name>t</short-name>
+
+	<uri>http://www.boylesoftware.com/jsp/thyme</uri>
+
+	<tag>
+		<name>form</name>
+		<tag-class>com.boylesoftware.web.jsp.FormTag</tag-class>
+		<body-content>scriptless</body-content>
+		<attribute>
+			<name>id</name>
+			<required>true</required>
+		</attribute>
+		<attribute>
+			<name>action</name>
+		</attribute>
+		<attribute>
+			<name>method</name>
+		</attribute>
+		<attribute>
+			<name>focus</name>
+		</attribute>
+		<attribute>
+			<name>bean</name>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>html5</name>
+		</attribute>
+	</tag>
+
+	<tag>
+		<name>label</name>
+		<tag-class>com.boylesoftware.web.jsp.LabelTag</tag-class>
+		<body-content>scriptless</body-content>
+		<attribute>
+			<name>name</name>
+			<required>true</required>
+		</attribute>
+	</tag>
+
+	<tag>
+		<name>input</name>
+		<tag-class>com.boylesoftware.web.jsp.InputTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>type</name>
+			<required>true</required>
+		</attribute>
+		<attribute>
+			<name>name</name>
+			<required>true</required>
+		</attribute>
+		<attribute>
+			<name>bean</name>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>beanField</name>
+		</attribute>
+		<attribute>
+			<name>required</name>
+		</attribute>
+	</tag>
+
+	<function>
+		<name>uri</name>
+		<function-class>com.boylesoftware.web.jsp.Functions</function-class>
+		<function-signature>java.lang.String uri(javax.servlet.jsp.PageContext,
+			java.lang.String)</function-signature>
+	</function>
+	<function>
+		<name>uriForce</name>
+		<function-class>com.boylesoftware.web.jsp.Functions</function-class>
+		<function-signature>java.lang.String uriForce(
+			javax.servlet.jsp.PageContext,
+			java.lang.String, boolean)</function-signature>
+	</function>
+	<function>
+		<name>uriForcePlain</name>
+		<function-class>com.boylesoftware.web.jsp.Functions</function-class>
+		<function-signature>java.lang.String uriForcePlain(
+			javax.servlet.jsp.PageContext,
+			java.lang.String)</function-signature>
+	</function>
+	<function>
+		<name>uriForceSSL</name>
+		<function-class>com.boylesoftware.web.jsp.Functions</function-class>
+		<function-signature>java.lang.String uriForceSSL(
+			javax.servlet.jsp.PageContext,
+			java.lang.String)</function-signature>
+	</function>
+	<function>
+		<name>uriParams</name>
+		<function-class>com.boylesoftware.web.jsp.Functions</function-class>
+		<function-signature>java.lang.String uriParams(
+			javax.servlet.jsp.PageContext,
+			java.lang.String, java.lang.String)</function-signature>
+	</function>
+
+</taglib>
