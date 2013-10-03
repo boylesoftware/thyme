@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import com.boylesoftware.web.api.Authenticator;
 import com.boylesoftware.web.spi.AuthenticationService;
 import com.boylesoftware.web.spi.RouterRequest;
+import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.FastPool;
 import com.boylesoftware.web.util.pool.PoolableObjectFactory;
 
@@ -152,7 +153,8 @@ class SessionlessAuthenticationService<T>
 			final String value) {
 
 		final Cookie authCookie = new Cookie(AUTH_COOKIE_NAME, value);
-		authCookie.setPath(request.getContextPath() + "/");
+		authCookie.setPath(
+				StringUtils.emptyIfNull(request.getContextPath()) + "/");
 
 		return authCookie;
 	}

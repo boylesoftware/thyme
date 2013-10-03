@@ -47,6 +47,7 @@ import com.boylesoftware.web.input.binders.IntegerBinder;
 import com.boylesoftware.web.input.binders.StringBinder;
 import com.boylesoftware.web.spi.RouterRequest;
 import com.boylesoftware.web.spi.UserInputHandler;
+import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.AbstractPoolable;
 import com.boylesoftware.web.util.pool.FastPool;
 import com.boylesoftware.web.util.pool.PoolableObjectFactory;
@@ -378,8 +379,10 @@ class UserInputControllerMethodArgHandler
 				final PropertyDescriptor propDesc = fieldDesc.getPropDesc();
 				final String propName = propDesc.getName();
 				final String propValStr = (fieldDesc.isNoTrim() ?
-						this.nullIfEmpty(request.getParameter(propName)) :
-							this.trimToNull(request.getParameter(propName)));
+						StringUtils.nullIfEmpty(
+								request.getParameter(propName)) :
+						StringUtils.trimToNull(
+								request.getParameter(propName)));
 				final Method propSetter = propDesc.getWriteMethod();
 				try {
 					propSetter.invoke(bean,
@@ -453,43 +456,5 @@ class UserInputControllerMethodArgHandler
 			(PoolableUserInput) request.getAttribute(POOLED_OBJ_ATTNAME);
 		if (pooledUserInput != null)
 			pooledUserInput.recycle();
-	}
-
-
-	/**
-	 * Trim the specified string and make it {@code null} if the result is an
-	 * empty string.
-	 *
-	 * @param str String to trim, or {@code null}.
-	 *
-	 * @return Trimmed string, or {@code null} if the string was {@code null},
-	 * empty or blank.
-	 */
-	private String trimToNull(final String str) {
-
-		if (str == null)
-			return str;
-
-		final String res = str.trim();
-		if (res.length() == 0)
-			return null;
-
-		return res;
-	}
-
-	/**
-	 * Check if specified string is empty.
-	 *
-	 * @param str String to test, or {@code null}.
-	 *
-	 * @return The original string, or {@code null} if the string was
-	 * {@code null} or empty.
-	 */
-	private String nullIfEmpty(final String str) {
-
-		if (str == null)
-			return str;
-
-		return (str.length() > 0 ? str : null);
 	}
 }

@@ -34,6 +34,7 @@ import com.boylesoftware.web.api.Authenticator;
 import com.boylesoftware.web.spi.Route.SecurityMode;
 import com.boylesoftware.web.spi.RouterRequest;
 import com.boylesoftware.web.util.LooseCannon;
+import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.PooledStringBuffer;
 import com.boylesoftware.web.util.pool.StringBufferPool;
 
@@ -271,7 +272,7 @@ class Router {
 
 		// restore the route
 		final RouterRequest routerReq = RouterRequestLifecycle.restore(request);
-		if (!routerReq.getRequestURI().equals(request.getRequestURI())) {
+		if (routerReq == null) {
 			if (debug)
 				this.log.debug("request is not a router request");
 			return false;
@@ -345,7 +346,7 @@ class Router {
 			if (httpsPort != 443)
 				sb.append(':').append(httpsPort);
 
-			sb.append(request.getContextPath())
+			sb.append(StringUtils.emptyIfNull(request.getContextPath()))
 				.append(webapp.getRouterConfiguration().getLoginPageURI())
 				.append('?').append(Authenticator.TARGET_URI)
 				.append('=');

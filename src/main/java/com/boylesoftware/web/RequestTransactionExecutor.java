@@ -267,7 +267,7 @@ class RequestTransactionExecutor
 			if (debug)
 				this.log.debug("no need for transaction, sending the view");
 
-			request.commitFlashAttributes();
+			RouterRequestLifecycle.complete(request);
 
 			if (!this.userInputValid)
 				request.getResponse().setStatus(
@@ -416,7 +416,7 @@ class RequestTransactionExecutor
 		}
 
 		// show the view or send the redirect
-		this.routerReq.commitFlashAttributes();
+		RouterRequestLifecycle.complete(this.routerReq);
 		if (sendView) {
 			if (debug)
 				this.log.debug("sending the view");

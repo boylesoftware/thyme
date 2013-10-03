@@ -31,6 +31,7 @@ import com.boylesoftware.web.spi.RouterConfigurationProvider;
 import com.boylesoftware.web.spi.Script;
 import com.boylesoftware.web.spi.ViewSender;
 import com.boylesoftware.web.spi.ViewSenderProvider;
+import com.boylesoftware.web.util.StringUtils;
 
 
 /**
@@ -94,7 +95,8 @@ public abstract class AbstractRouterConfigurationProvider
 		try {
 			this.buildRoutes(sc);
 
-			final String contextPath = sc.getContextPath();
+			final String contextPath =
+				StringUtils.emptyIfNull(sc.getContextPath());
 
 			return new RouterConfigurationImpl(appServices,
 					this.mappings, contextPath, this.getLoginPageURI(sc),
@@ -151,7 +153,7 @@ public abstract class AbstractRouterConfigurationProvider
 			final String viewIdPattern, final Script viewScript)
 		throws UnavailableException {
 
-		final String contextPath = sc.getContextPath();
+		final String contextPath = StringUtils.emptyIfNull(sc.getContextPath());
 
 		this.mappings.add(new RouteImpl(sc, id, contextPath + uriPattern,
 				securityMode, commonScript, controller,

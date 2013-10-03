@@ -71,6 +71,18 @@ public class RouterRequestLifecycle
 	}
 
 	/**
+	 * Complete router request active lifecycle. Called before sending the view.
+	 *
+	 * @param routerReq The router request.
+	 */
+	static void complete(final RouterRequest routerReq) {
+
+		routerReq.removeAttribute(ROUTER_REQ_ATTNAME);
+
+		routerReq.commitFlashAttributes();
+	}
+
+	/**
 	 * Disassociate router request from the container request and recycle it.
 	 *
 	 * @param routerReq The router request.
@@ -107,13 +119,5 @@ public class RouterRequestLifecycle
 
 		if (this.log.isDebugEnabled())
 			this.log.debug("<<< request destroyed");
-
-		// this can happen only as a result of bugs in the container
-		if (restore(sre.getServletRequest()) != null) {
-			this.log.fatal(
-				"router request lifecycle has not been completed correctly");
-			// TODO: do we have to be that brutal?
-			System.exit(1);
-		}
 	}
 }

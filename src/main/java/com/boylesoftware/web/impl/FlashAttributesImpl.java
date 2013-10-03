@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.boylesoftware.web.api.FlashAttributes;
+import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.PooledStringBuffer;
 import com.boylesoftware.web.util.pool.StringBufferPool;
 
@@ -184,7 +185,7 @@ class FlashAttributesImpl
 		}
 
 		final Cookie cookie = new Cookie(FLASH_COOKIE, cookieVal);
-		cookie.setPath(request.getContextPath() + "/");
+		cookie.setPath(StringUtils.emptyIfNull(request.getContextPath()) + "/");
 		if (cookieVal.length() == 0)
 			cookie.setMaxAge(0);
 

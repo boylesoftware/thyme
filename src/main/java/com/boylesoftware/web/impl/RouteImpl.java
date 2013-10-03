@@ -29,6 +29,7 @@ import com.boylesoftware.web.spi.ControllerMethodArgHandlerProvider;
 import com.boylesoftware.web.spi.Route;
 import com.boylesoftware.web.spi.Script;
 import com.boylesoftware.web.spi.ViewSender;
+import com.boylesoftware.web.util.StringUtils;
 
 
 /**
@@ -198,7 +199,8 @@ class RouteImpl
 
 		// route id
 		this.id = (id != null ? id :
-			this.uriTemplate.substring(sc.getContextPath().length()));
+			this.uriTemplate.substring(
+					StringUtils.emptyIfNull(sc.getContextPath()).length()));
 
 		// save security mode
 		this.securityMode = securityMode;
