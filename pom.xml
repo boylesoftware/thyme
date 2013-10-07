@@ -57,7 +57,43 @@
 		</repository>
 	</repositories>
 
+	<properties>
+		<antlr4.version>4.1</antlr4.version>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.antlr</groupId>
+				<artifactId>antlr4-maven-plugin</artifactId>
+				<version>${antlr4.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>antlr4</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<links>
+						<link>http://antlr4.org/api/Java/</link>
+						<link>http://docs.oracle.com/javaee/7/api/</link>
+					</links>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>antlr4-runtime</artifactId>
+			<version>${antlr4.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>

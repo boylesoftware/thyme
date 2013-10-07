@@ -15,8 +15,9 @@
  */
 
 /**
- * Standard value binders for user input bean fields.
+ * Implementation of router configuration provider that uses special language
+ * to define the configuration in the "/WEB-INF/routes" file.
  *
  * @author Lev Himmelfarb
  */
-package com.boylesoftware.web.input.binders;
+package com.boylesoftware.web.impl.routes;

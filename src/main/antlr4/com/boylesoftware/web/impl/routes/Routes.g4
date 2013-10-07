@@ -1,4 +1,8 @@
 /*
+ * Router configuration grammar.
+ *
+ * author: Lev Himmelfarb
+ *
  * Copyright 2013 Boyle Software, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +18,8 @@
  * limitations under the License.
  */
 
-/**
- * Standard value binders for user input bean fields.
- *
- * @author Lev Himmelfarb
- */
-package com.boylesoftware.web.input.binders;
+grammar Routes;
+
+r  : 'hello' ID ;
+ID : [a-z]+ ;
+WS : [ \t\r\n]+ -> skip ;
