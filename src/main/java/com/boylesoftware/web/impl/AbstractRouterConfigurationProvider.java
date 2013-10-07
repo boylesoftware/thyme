@@ -29,7 +29,6 @@ import com.boylesoftware.web.spi.Route.SecurityMode;
 import com.boylesoftware.web.spi.RouterConfiguration;
 import com.boylesoftware.web.spi.RouterConfigurationProvider;
 import com.boylesoftware.web.spi.Script;
-import com.boylesoftware.web.spi.ViewSender;
 import com.boylesoftware.web.spi.ViewSenderProvider;
 import com.boylesoftware.web.util.StringUtils;
 
@@ -49,14 +48,9 @@ public abstract class AbstractRouterConfigurationProvider
 	private final ControllerMethodArgHandlerProvider argHandlerProvider;
 
 	/**
-	 * View sender factory.
+	 * View sender provider.
 	 */
-	private final ViewSenderProvider viewSenderProvider;
-
-	/**
-	 * View sender.
-	 */
-	private ViewSender viewSender;
+	private ViewSenderProvider viewSenderProvider;
 
 	/**
 	 * Temporary collection of route mappings used during the
@@ -69,14 +63,11 @@ public abstract class AbstractRouterConfigurationProvider
 	 * Create new provider.
 	 *
 	 * @param argHandlerProvider Controller method argument handler provider.
-	 * @param viewSenderProvider View sender provider.
 	 */
 	public AbstractRouterConfigurationProvider(
-			final ControllerMethodArgHandlerProvider argHandlerProvider,
-			final ViewSenderProvider viewSenderProvider) {
+			final ControllerMethodArgHandlerProvider argHandlerProvider) {
 
 		this.argHandlerProvider = argHandlerProvider;
-		this.viewSenderProvider = viewSenderProvider;
 	}
 
 
@@ -89,11 +80,15 @@ public abstract class AbstractRouterConfigurationProvider
 			final ApplicationServices appServices)
 		throws UnavailableException {
 
-		this.viewSender = this.viewSenderProvider.getViewSender(sc);
-
 		this.mappings = new ArrayList<>();
 		try {
-			this.buildRoutes(sc);
+
+			this.viewSenderProvider = this.getViewSenderProvider(sc);
+			try {
+				this.buildRoutes(sc);
+			} finally {
+				this.viewSenderProvider = null;
+			}
 
 			final String contextPath =
 				StringUtils.emptyIfNull(sc.getContextPath());
@@ -157,10 +152,23 @@ public abstract class AbstractRouterConfigurationProvider
 
 		this.mappings.add(new RouteImpl(sc, id, contextPath + uriPattern,
 				securityMode, commonScript, controller,
-				this.argHandlerProvider, viewIdPattern, viewScript,
-				this.viewSender));
+				this.argHandlerProvider, viewIdPattern,
+				this.viewSenderProvider.getViewSender(sc), viewScript));
 	}
 
+
+	/**
+	 * Get view sender provider to use with the routes.
+	 *
+	 * @param sc Servlet context.
+	 *
+	 * @return View sender provider.
+	 *
+	 * @throws UnavailableException If an error happens.
+	 */
+	protected abstract ViewSenderProvider getViewSenderProvider(
+			ServletContext sc)
+		throws UnavailableException;
 
 	/**
 	 * Build the route mappings. The implementation must call one of the

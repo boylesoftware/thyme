@@ -115,11 +115,11 @@ class RouteImpl
 	 * placeholders for request attributes and parameters in curly braces with
 	 * the attribute or parameter name inside. Attributes take precedence over
 	 * parameters.
+	 * @param viewSender View sender to use to send the view to the client.
 	 * @param viewScript Additional logic associated with the view, or
 	 * {@code null} if none. If specified, the script is executed each time
 	 * before the view is sent to the client. The script's purpose it to prepare
 	 * data used by the view.
-	 * @param viewSender View sender to use to send the view to the client.
 	 *
 	 * @throws UnavailableException If an error happens.
 	 */
@@ -127,8 +127,8 @@ class RouteImpl
 			final String uriPattern, final SecurityMode securityMode,
 			final Script commonScript, final Object controller,
 			final ControllerMethodArgHandlerProvider argHandlerProvider,
-			final String viewIdPattern, final Script viewScript,
-			final ViewSender viewSender)
+			final String viewIdPattern, final ViewSender viewSender,
+			final Script viewScript)
 		throws UnavailableException {
 
 		// parse URI pattern and template
