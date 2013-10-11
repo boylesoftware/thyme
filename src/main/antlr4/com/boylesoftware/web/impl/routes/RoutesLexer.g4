@@ -100,7 +100,6 @@ SCRIPT_KW_ELSE: 'else' ;
 SCRIPT_KW_UNLESS: 'unless' ;
 SCRIPT_KW_ABORT: 'abort' ;
 SCRIPT_KW_FORBID: 'forbid' ;
-SCRIPT_KW_ALLOW: 'allow' ;
 SCRIPT_KW_NEW: 'new' ;
 SCRIPT_KW_REF: 'ref' ;
 

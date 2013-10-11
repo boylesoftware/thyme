@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.spi;
+package com.boylesoftware.web.impl.routes;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
@@ -23,16 +24,16 @@ import com.boylesoftware.web.RequestedResourceException;
 
 
 /**
- * Interface for implementations of logic associated with different phases of
- * the request processing by the framework.
+ * Operation on a {@link EntityQueryValueExpression}.
  *
- * @author Lev Himmelfarb
+ * @author Lev himmelfarb
  */
-public interface Script {
+interface EntityQueryTweak {
 
 	/**
-	 * Execute the script.
+	 * Apply the tweak to the specified query.
 	 *
+	 * @param query The query.
 	 * @param request The HTTP request.
 	 * @param em Entity manager to use to access persistent objects.
 	 *
@@ -40,6 +41,6 @@ public interface Script {
 	 * request.
 	 * @throws ServletException If an application error happens.
 	 */
-	void execute(HttpServletRequest request, EntityManager em)
+	void apply(Query query, HttpServletRequest request, EntityManager em)
 		throws RequestedResourceException, ServletException;
 }

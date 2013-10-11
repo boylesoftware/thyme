@@ -15,60 +15,56 @@
  */
 package com.boylesoftware.web.impl.routes;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.persistence.EntityManager;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
 import com.boylesoftware.web.RequestedResourceException;
-import com.boylesoftware.web.spi.Script;
 
 
 /**
- * Script implementation that executes a sequence of nested scripts.
+ * Implementation of the "not" script condition.
  *
  * @author Lev Himmelfarb
  */
-class CombinedScript
-	implements Script {
+class NotCondition
+	implements Condition {
 
 	/**
-	 * Nested subscripts.
+	 * Condition to invert.
 	 */
-	private final List<Script> subscripts = new ArrayList<>();
+	private final Condition condition;
 
 
 	/**
-	 * Add subscript.
+	 * Create new condition.
 	 *
-	 * @param subscript The subscript.
+	 * @param condition Condition to invert.
 	 */
-	void addSubscript(final Script subscript) {
+	NotCondition(final Condition condition) {
 
-		this.subscripts.add(subscript);
-	}
-
-	/**
-	 * Tell if the script has no nested subscripts.
-	 *
-	 * @return {@code true} if the script is empty.
-	 */
-	boolean isEmpty() {
-
-		return this.subscripts.isEmpty();
+		this.condition = condition;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.Script#execute(javax.servlet.http.HttpServletRequest, javax.persistence.EntityManager)
+	 * @see com.boylesoftware.web.impl.routes.Condition#isTrue(javax.servlet.http.HttpServletRequest, javax.persistence.EntityManager)
 	 */
 	@Override
-	public void execute(final HttpServletRequest request,
+	public boolean isTrue(final HttpServletRequest request,
 			final EntityManager em)
-		throws RequestedResourceException {
+		throws RequestedResourceException, ServletException {
 
-		for (final Script subscript : this.subscripts)
-			subscript.execute(request, em);
+		return !this.condition.isTrue(request, em);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return "!" + this.condition;
 	}
 }

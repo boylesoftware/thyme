@@ -23,6 +23,7 @@ parser grammar RoutesParser;
 import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -169,6 +170,35 @@ private String literalValue(final String literal) {
 
 	return res.toString();
 }
+
+/**
+ * Find class given the class name an and a collection of packages, in which the
+ * class may be.
+ *
+ * @param className Class name (qualified or unqualified).
+ * @param packageNames Names of packages, in which to try to find the class.
+ *
+ * @return The class, or {@code null} if not found.
+ */
+private Class<?> findClass(final String className,
+	final Collection<String> packageNames) {
+
+	Class<?> res = null;
+	try {
+		res = Class.forName(className);
+	} catch (final ClassNotFoundException e) {
+		for (final String packageName : packageNames) {
+			try {
+				res = Class.forName(packageName + "." + className);
+				break;
+			} catch (final ClassNotFoundException e1) {
+				// skip, try next package
+			}
+		}
+	}
+
+	return res;
+}
 }
 
 
@@ -188,29 +218,46 @@ config
 
 
 initialDeclarations
-	: loginPageDeclaration? declaration* protectedPagesDeclaration? declaration* publicPagesDeclaration?
-	| loginPageDeclaration? declaration* publicPagesDeclaration? declaration* protectedPagesDeclaration?
-	| protectedPagesDeclaration? declaration* loginPageDeclaration? declaration* publicPagesDeclaration?
-	| protectedPagesDeclaration? declaration* publicPagesDeclaration? declaration* loginPageDeclaration?
-	| publicPagesDeclaration? declaration* loginPageDeclaration? declaration* protectedPagesDeclaration?
-	| publicPagesDeclaration? declaration* protectedPagesDeclaration? declaration* loginPageDeclaration?
+	: loginPageDeclaration? declaration*
+		protectedPagesDeclaration? declaration*
+		publicPagesDeclaration?
+	| loginPageDeclaration? declaration*
+		publicPagesDeclaration? declaration*
+		protectedPagesDeclaration?
+	| protectedPagesDeclaration? declaration*
+		loginPageDeclaration? declaration*
+		publicPagesDeclaration?
+	| protectedPagesDeclaration? declaration*
+		publicPagesDeclaration? declaration*
+		loginPageDeclaration?
+	| publicPagesDeclaration? declaration*
+		loginPageDeclaration? declaration*
+		protectedPagesDeclaration?
+	| publicPagesDeclaration? declaration*
+		protectedPagesDeclaration? declaration*
+		loginPageDeclaration?
 	;
 
 loginPageDeclaration
 	: BEGIN_DECL_LOGIN_PAGE DECL_VALUE END_DECL {
+
 		this.loginPageURI = $DECL_VALUE.text;
 	}
 	;
 
 protectedPagesDeclaration
-	: BEGIN_DECL_PROTECTED_PAGES v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+	: BEGIN_DECL_PROTECTED_PAGES
+		v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+
 		for (final Token t : $v)
 			this.protectedURIPatterns.add(t.getText());
 	}
 	;
 
 publicPagesDeclaration
-	: BEGIN_DECL_PUBLIC_PAGES v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+	: BEGIN_DECL_PUBLIC_PAGES
+		v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+
 		for (final Token t : $v)
 			this.publicURIPatterns.add(t.getText());
 	}
@@ -223,7 +270,9 @@ declaration
 	;
 
 controllerPackagesDeclaration
-	: BEGIN_DECL_CONTROLLER_PACKAGES v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+	: BEGIN_DECL_CONTROLLER_PACKAGES
+		v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+
 		this.controllerPackages.clear();
 		for (final Token t : $v)
 			this.controllerPackages.add(t.getText());
@@ -231,7 +280,9 @@ controllerPackagesDeclaration
 	;
 
 entityPackagesDeclaration
-	: BEGIN_DECL_ENTITY_PACKAGES v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+	: BEGIN_DECL_ENTITY_PACKAGES
+		v+=DECL_VALUE (DECL_COMMA v+=DECL_VALUE)* END_DECL {
+
 		this.entityPackages.clear();
 		for (final Token t : $v)
 			this.entityPackages.add(t.getText());
@@ -240,20 +291,18 @@ entityPackagesDeclaration
 
 viewsBaseDeclaration
 	: BEGIN_DECL_VIEWS_BASE DECL_VALUE END_DECL {
+
 		this.viewsBase = $DECL_VALUE.text;
 	}
 	;
 
 
 mapping
-locals [String viewIdPattern, Object controllerObj,
-	CombinedScript routeScriptObj, CombinedScript viewScriptObj,
-	CombinedScript currentScript]
-@init {
-	$routeScriptObj = new CombinedScript();
-	$viewScriptObj = new CombinedScript();
-}
-	: ROUTE_ID? URI_PATTERN MAPPING_MODE? controller? routeScript? MAPPING_ARROW view viewScript? {
+locals [String viewIdPattern, Object controllerObj]
+	: ROUTE_ID? URI_PATTERN MAPPING_MODE?
+		controller? routeScript=script[true]?
+		MAPPING_ARROW view viewScript=script[false]? {
+
 		System.out.println(">>> MAPPING:");
 		System.out.println("    - id=[" + ($ROUTE_ID != null ? $ROUTE_ID.text.substring(1) : null) + "]");
 		System.out.println("    - uriPattern=[" + $URI_PATTERN.text + "]");
@@ -272,10 +321,16 @@ locals [String viewIdPattern, Object controllerObj,
 			}
 		}
 		System.out.println("    - securityMode=[" + mappingMode + "]");
-		System.out.println("    - commonScript=[" + $routeScript.text + "]");
+		if ($ctx.routeScript != null) {
+			System.out.println("    - commonScript=" + $routeScript.scriptObj +
+				" [" + $routeScript.text + "]");
+		}
 		System.out.println("    - controller=[" + $controllerObj + "]");
 		System.out.println("    - viewIdPattern=[" + $viewIdPattern + "]");
-		System.out.println("    - viewScript=[" + $viewScript.text + "]");
+		if ($ctx.viewScript != null) {
+			System.out.println("    - viewScript=" + $viewScript.scriptObj +
+				" [" + $viewScript.text + "]");
+		}
 	}
 	;
 
@@ -285,23 +340,12 @@ locals [List<Class<?>> argTypes, List<Object> argValues]
 	$argTypes = new ArrayList<>();
 	$argValues = new ArrayList<>();
 }
-	: MAPPING_CONTROLLER_NAME (MAPPING_LPAREN controllerArgs CTRL_ARGS_RPAREN)? {
+	: MAPPING_CONTROLLER_NAME
+		(MAPPING_LPAREN controllerArgs CTRL_ARGS_RPAREN)? {
 
-		final String controllerClassName = $MAPPING_CONTROLLER_NAME.text;
-		Class<?> controllerClass = null;
-		try {
-			controllerClass = Class.forName(controllerClassName);
-		} catch (final ClassNotFoundException e) {
-			for (final String packageName : this.controllerPackages) {
-				try {
-					controllerClass = Class.forName(packageName + "." +
-							controllerClassName);
-					break;
-				} catch (final ClassNotFoundException e1) {
-					// skip, try next package
-				}
-			}
-		}
+		Class<?> controllerClass =
+			this.findClass($MAPPING_CONTROLLER_NAME.text,
+			this.controllerPackages);
 		if (controllerClass == null)
 			throw new InvalidRoutesException(
 				"Invalid controller class at line " + $start.getLine() + ".");
@@ -364,119 +408,239 @@ controllerArg
 
 view
 	: MAPPING_VIEW_ID {
+
 		$mapping::viewIdPattern = this.viewsBase + $MAPPING_VIEW_ID.text;
 	}
 	;
 
 
-routeScript
+script[boolean routeScript]
+returns [SequenceScript scriptObj]
 @init {
-	$mapping::currentScript = $mapping::routeScriptObj;
+	$scriptObj = new SequenceScript();
 }
-	: BEGIN_SCRIPT (routeScriptStatement)* END_SCRIPT
+	: BEGIN_SCRIPT (scriptStatement[$routeScript])* END_SCRIPT
 	;
 
-viewScript
-@init {
-	$mapping::currentScript = $mapping::viewScriptObj;
-}
-	: BEGIN_SCRIPT (viewScriptStatement)* END_SCRIPT
-	;
-
-routeScriptStatement
-	: routeScriptConditionalConstruct
-	| scriptAbortStatement
-	| scriptForbidStatement
-	| scriptAllowStatement
+scriptStatement[boolean routeScript]
+	: scriptConditionalConstruct[$routeScript]
 	| scriptAssignStatement
+	| {$routeScript}? scriptAbortStatement
+	| {$routeScript}? scriptForbidStatement
 	;
 
-viewScriptStatement
-	: viewScriptConditionalConstruct
-	| scriptAssignStatement
-	;
+scriptConditionalConstruct[boolean routeScript]
+	: SCRIPT_KW_IF scriptCondition ifScript=script[$routeScript]
+		(SCRIPT_KW_ELSE elseScript=script[$routeScript])? {
 
-routeScriptConditionalConstruct
-	: SCRIPT_KW_IF scriptCondition routeScript (SCRIPT_KW_ELSE routeScript)?
-	;
-
-viewScriptConditionalConstruct
-	: SCRIPT_KW_IF scriptCondition viewScript (SCRIPT_KW_ELSE viewScript)?
+		$script::scriptObj.addSubscript(
+			new ConditionalStatement(
+				$scriptCondition.conditionObj,
+				$ifScript.scriptObj,
+				($ctx.elseScript != null ? $elseScript.scriptObj : null)
+			)
+		);
+	}
 	;
 
 scriptAbortStatement
-	: SCRIPT_KW_ABORT (SCRIPT_KW_IF | SCRIPT_KW_UNLESS) scriptCondition
+	: SCRIPT_KW_ABORT k=(SCRIPT_KW_IF | SCRIPT_KW_UNLESS) scriptCondition {
+
+		$script::scriptObj.addSubscript(
+			new AbortStatement(
+				$k.text.equals("if"),
+				$scriptCondition.conditionObj
+			)
+		);
+	}
 	;
 
 scriptForbidStatement
-	: SCRIPT_KW_FORBID (SCRIPT_KW_IF | SCRIPT_KW_UNLESS) scriptCondition
-	;
+	: SCRIPT_KW_FORBID k=(SCRIPT_KW_IF | SCRIPT_KW_UNLESS) scriptCondition {
 
-scriptAllowStatement
-	: SCRIPT_KW_ALLOW (SCRIPT_KW_IF | SCRIPT_KW_UNLESS) scriptCondition
+		$script::scriptObj.addSubscript(
+			new ForbidStatement(
+				$k.text.equals("if"),
+				$scriptCondition.conditionObj
+			)
+		);
+	}
 	;
 
 scriptAssignStatement
-	: SCRIPT_NAME SCRIPT_ASSIGN scriptValueExpr
+	: SCRIPT_NAME SCRIPT_ASSIGN scriptValueExpr {
+
+		$script::scriptObj.addSubscript(
+			new AssignStatement(
+				$SCRIPT_NAME.text,
+				$scriptValueExpr.valueExprObj
+			)
+		);
+	}
 	;
 
 scriptCondition
-	: SCRIPT_LPAREN scriptConditionExpr SCRIPT_RPAREN
+returns [Condition conditionObj]
+	: SCRIPT_LPAREN scriptConditionExpr SCRIPT_RPAREN {
+		$conditionObj = $scriptConditionExpr.conditionObj;
+	}
 	;
 
 scriptConditionExpr
-	: SCRIPT_OP_NOT<assoc=right> scriptConditionExpr
-	| scriptConditionExpr SCRIPT_OP_AND scriptConditionExpr
-	| scriptConditionExpr SCRIPT_OP_OR scriptConditionExpr
-	| scriptValueExpr SCRIPT_OP_EQ scriptValueExpr
-	| scriptValueExpr SCRIPT_OP_NE scriptValueExpr
-	| scriptValueExpr
-	| (SCRIPT_COND_GET | SCRIPT_COND_POST | SCRIPT_COND_DELETE)
-	| SCRIPT_LPAREN scriptConditionExpr SCRIPT_RPAREN
+returns [Condition conditionObj]
+	: SCRIPT_OP_NOT<assoc=right> c11=scriptConditionExpr {
+		$conditionObj =
+			new NotCondition($c11.conditionObj);
+	}
+	| c21=scriptConditionExpr SCRIPT_OP_AND c22=scriptConditionExpr {
+		$conditionObj =
+			new AndCondition($c21.conditionObj, $c22.conditionObj);
+	}
+	| c31=scriptConditionExpr SCRIPT_OP_OR c32=scriptConditionExpr {
+		$conditionObj =
+			new OrCondition($c31.conditionObj, $c32.conditionObj);
+	}
+	| v41=scriptValueExpr SCRIPT_OP_EQ v42=scriptValueExpr {
+		$conditionObj =
+			new EqualsCondition($v41.valueExprObj, $v42.valueExprObj);
+	}
+	| v51=scriptValueExpr SCRIPT_OP_NE v52=scriptValueExpr {
+		$conditionObj =
+			new NotEqualsCondition($v51.valueExprObj, $v52.valueExprObj);
+	}
+	| v6=scriptValueExpr {
+		$conditionObj =
+			new ValueCondition($v6.valueExprObj);
+	}
+	| m7=(SCRIPT_COND_GET | SCRIPT_COND_POST | SCRIPT_COND_DELETE) {
+		$conditionObj =
+			new RequestMethodCondition($m7.text);
+	}
+	| SCRIPT_LPAREN c8=scriptConditionExpr SCRIPT_RPAREN {
+		$conditionObj = $c8.conditionObj;
+	}
 	;
 
 scriptValueExpr
-	: scriptPersistencyExpr
-	| scriptQName
-	| scriptLiteral
+returns [ValueExpression valueExprObj]
+	: scriptPersistencyExpr {
+		$valueExprObj = $scriptPersistencyExpr.valueExprObj;
+	}
+	| scriptQName {
+		$valueExprObj = new ModelReferenceValueExpression($scriptQName.text);
+	}
+	| scriptLiteral {
+		$valueExprObj = $scriptLiteral.valueExprObj;
+	}
 	;
 
 scriptPersistencyExpr
-	: SCRIPT_KW_NEW scriptEntityName
-	| SCRIPT_KW_REF scriptEntityName SCRIPT_LPAREN scriptValueExpr SCRIPT_RPAREN
-	| scriptEntityName SCRIPT_COLON scriptQueryName SCRIPT_LPAREN scriptQueryParams SCRIPT_RPAREN scriptQueryOps
-	| scriptEntityName SCRIPT_LPAREN scriptValueExpr SCRIPT_RPAREN
+returns [ValueExpression valueExprObj]
+	: SCRIPT_KW_NEW e1=scriptEntity {
+		$valueExprObj = new NewEntityValueExpression($e1.entityClass);
+	}
+	| SCRIPT_KW_REF e2=scriptEntity
+		SCRIPT_LPAREN v2=scriptValueExpr SCRIPT_RPAREN {
+		$valueExprObj =
+			new EntityRefValueExpression($e2.entityClass, $v2.valueExprObj);
+	}
+	| e3=scriptEntity SCRIPT_LPAREN v3=scriptValueExpr SCRIPT_RPAREN {
+		$valueExprObj =
+			new EntityValueExpression($e3.entityClass, $v3.valueExprObj);
+	}
+	| scriptQuery {
+		$valueExprObj = $scriptQuery.valueExprObj;
+	}
 	;
 
-scriptEntityName
-	: scriptQName
-	;
+scriptQuery
+returns [EntityQueryValueExpression valueExprObj]
+locals [List<EntityQueryTweak> tweaks]
+@init {
+	$tweaks = new ArrayList<>();
+}
+	: scriptEntity SCRIPT_COLON scriptQueryName=scriptQName
+		SCRIPT_LPAREN scriptQueryParams SCRIPT_RPAREN
+		scriptQueryOp* (SCRIPT_DOT SCRIPT_QOP_LIST)? {
 
-scriptQueryName
-	: scriptQName
+		$valueExprObj = new EntityQueryValueExpression(
+			$scriptEntity.entityClass,
+			$scriptQueryName.text,
+			$tweaks.toArray(new EntityQueryTweak[$tweaks.size()]),
+			($SCRIPT_QOP_LIST != null)
+		);
+	}
 	;
 
 scriptQueryParams
-	: scriptQueryNamedParam (SCRIPT_COMMA scriptQueryNamedParam)*
-	| scriptQueryPosParam (SCRIPT_COMMA scriptQueryPosParam)*
+	: scriptQueryNamedParams
+	| scriptQueryPosParams
 	|
 	;
 
+scriptQueryNamedParams
+	: scriptQueryNamedParam (SCRIPT_COMMA scriptQueryNamedParam)*
+	;
+
 scriptQueryNamedParam
-	: SCRIPT_NAME SCRIPT_COLON scriptValueExpr
+	: SCRIPT_NAME SCRIPT_COLON scriptValueExpr {
+
+		$scriptQuery::tweaks.add(
+			new NamedParamEntityQueryTweak(
+				$SCRIPT_NAME.text,
+				$scriptValueExpr.valueExprObj
+			)
+		);
+	}
+	;
+
+scriptQueryPosParams
+locals [int nextParamPos]
+@init {
+	$nextParamPos = 1;
+}
+	: scriptQueryPosParam { $nextParamPos++; }
+		(SCRIPT_COMMA scriptQueryPosParam { $nextParamPos++; })*
 	;
 
 scriptQueryPosParam
-	: scriptValueExpr
-	;
+	: scriptValueExpr {
 
-scriptQueryOps
-	: scriptQueryOp* (SCRIPT_DOT SCRIPT_QOP_LIST)?
+		$scriptQuery::tweaks.add(
+			new PositionalParamEntityQueryTweak(
+				$scriptQueryPosParams::nextParamPos,
+				$scriptValueExpr.valueExprObj
+			)
+		);
+	}
 	;
 
 scriptQueryOp
-	: SCRIPT_DOT SCRIPT_QOP_MAXRESULTS SCRIPT_LPAREN scriptValueExpr SCRIPT_RPAREN
-	| SCRIPT_DOT SCRIPT_QOP_FIRSTRESULT SCRIPT_LPAREN scriptValueExpr SCRIPT_RPAREN
+	: SCRIPT_DOT SCRIPT_QOP_MAXRESULTS
+		SCRIPT_LPAREN v1=scriptValueExpr SCRIPT_RPAREN {
+
+		$scriptQuery::tweaks.add(
+			new MaxResultsEntityQueryTweak($v1.valueExprObj)
+		);
+	}
+	| SCRIPT_DOT SCRIPT_QOP_FIRSTRESULT
+		SCRIPT_LPAREN v2=scriptValueExpr SCRIPT_RPAREN {
+
+		$scriptQuery::tweaks.add(
+			new FirstResultEntityQueryTweak($v2.valueExprObj)
+		);
+	}
+	;
+
+scriptEntity
+returns [Class<?> entityClass]
+	: scriptQName {
+
+		$entityClass = this.findClass($scriptQName.text, this.entityPackages);
+		if ($entityClass == null)
+			throw new InvalidRoutesException(
+				"Unknown entity at line " + $start.getLine() + ".");
+	}
 	;
 
 scriptQName
@@ -484,11 +648,40 @@ scriptQName
 	;
 
 scriptLiteral
-	: LIT_STRING
-	| SCRIPT_LIT_BOOL
-	| SCRIPT_LIT_LONG
-	| SCRIPT_LIT_INT
-	| SCRIPT_LIT_DOUBLE
-	| SCRIPT_LIT_FLOAT
-	| SCRIPT_LIT_DECIMAL
+returns [ValueExpression valueExprObj]
+	: LIT_STRING {
+		$valueExprObj = new LiteralValueExpression(
+			this.literalValue($LIT_STRING.text)
+		);
+	}
+	| SCRIPT_LIT_BOOL {
+		$valueExprObj = new LiteralValueExpression(
+			Boolean.valueOf($SCRIPT_LIT_BOOL.text)
+		);
+	}
+	| SCRIPT_LIT_LONG {
+		$valueExprObj = new LiteralValueExpression(
+			Long.valueOf($SCRIPT_LIT_LONG.text)
+		);
+	}
+	| SCRIPT_LIT_INT {
+		$valueExprObj = new LiteralValueExpression(
+			Integer.valueOf($SCRIPT_LIT_INT.text)
+		);
+	}
+	| SCRIPT_LIT_DOUBLE {
+		$valueExprObj = new LiteralValueExpression(
+			Double.valueOf($SCRIPT_LIT_DOUBLE.text)
+		);
+	}
+	| SCRIPT_LIT_FLOAT {
+		$valueExprObj = new LiteralValueExpression(
+			Float.valueOf($SCRIPT_LIT_FLOAT.text)
+		);
+	}
+	| SCRIPT_LIT_DECIMAL {
+		$valueExprObj = new LiteralValueExpression(
+			new BigDecimal($SCRIPT_LIT_DECIMAL.text)
+		);
+	}
 	;

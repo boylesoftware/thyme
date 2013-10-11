@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.spi;
+package com.boylesoftware.web.impl.routes;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
@@ -23,23 +23,24 @@ import com.boylesoftware.web.RequestedResourceException;
 
 
 /**
- * Interface for implementations of logic associated with different phases of
- * the request processing by the framework.
+ * Value expression used in a script.
  *
  * @author Lev Himmelfarb
  */
-public interface Script {
+interface ValueExpression {
 
 	/**
-	 * Execute the script.
+	 * Evaluate the expression and get the result.
 	 *
 	 * @param request The HTTP request.
 	 * @param em Entity manager to use to access persistent objects.
+	 *
+	 * @return Expression value, which may be {@code null}.
 	 *
 	 * @throws RequestedResourceException If there is a problem with the
 	 * request.
 	 * @throws ServletException If an application error happens.
 	 */
-	void execute(HttpServletRequest request, EntityManager em)
+	Object getValue(HttpServletRequest request, EntityManager em)
 		throws RequestedResourceException, ServletException;
 }
