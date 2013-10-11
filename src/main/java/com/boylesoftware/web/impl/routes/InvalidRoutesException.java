@@ -13,30 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.spi;
-
-import javax.servlet.ServletContext;
-import javax.servlet.UnavailableException;
+package com.boylesoftware.web.impl.routes;
 
 
 /**
- * Interface for the {@link ViewSender} provider.
+ * Router configuration error.
  *
  * @author Lev Himmelfarb
  */
-public interface ViewSenderProvider {
+class InvalidRoutesException
+	extends RuntimeException {
 
 	/**
-	 * Get the view sender. This method is called only during the application
-	 * initialization.
-	 *
-	 * @param sc Servlet context.
-	 *
-	 * @return The view sender.
-	 *
-	 * @throws UnavailableException If view sender is unavailable. Throwing this
-	 * exception makes the web-application fail to start.
+	 * Serial version id.
 	 */
-	ViewSender getViewSender(ServletContext sc)
-		throws UnavailableException;
+	private static final long serialVersionUID = 1L;
+
+
+	/**
+	 * Create new exception.
+	 *
+	 * @param message Error description.
+	 */
+	InvalidRoutesException(final String message) {
+		super(message);
+	}
+
+	/**
+	 * Create new exception.
+	 *
+	 * @param message Error description.
+	 * @param cause Error original cause.
+	 */
+	InvalidRoutesException(final String message, final Throwable cause) {
+		super(message, cause);
+	}
 }

@@ -15,6 +15,9 @@
  */
 package com.boylesoftware.web.impl.routes;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import javax.servlet.ServletContext;
 import javax.servlet.UnavailableException;
 
@@ -24,6 +27,11 @@ import com.boylesoftware.web.impl.StandardControllerMethodArgHandlerProvider;
 import com.boylesoftware.web.impl.view.DispatchViewSenderProvider;
 import com.boylesoftware.web.impl.view.MultiplexViewSenderProvider;
 import com.boylesoftware.web.spi.ViewSenderProvider;
+
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.logging.LogFactory;
 
 
 /**
@@ -39,6 +47,27 @@ public class RoutesRouterConfigurationProvider
 	 * Context-relative path to the router configuration file.
 	 */
 	public static final String ROUTES_PATH = "/WEB-INF/routes";
+
+
+	/**
+	 * Configuration file parser.
+	 */
+	private RoutesParser parser;
+
+	/**
+	 * Login page URI.
+	 */
+	private String loginPageURI;
+
+	/**
+	 * Protected pages URI pattern.
+	 */
+	private String protectedURIPattern;
+
+	/**
+	 * Public pages URI pattern.
+	 */
+	private String publicURIPattern;
 
 
 	/**
@@ -73,17 +102,73 @@ public class RoutesRouterConfigurationProvider
 	protected void buildRoutes(final ServletContext sc)
 		throws UnavailableException {
 
-		// TODO Auto-generated method stub
+		try (final InputStream in = sc.getResourceAsStream(ROUTES_PATH)) {
+
+			if (in == null)
+				throw new UnavailableException("No " + ROUTES_PATH +
+						" found in the web-application.");
+
+			this.parser = new RoutesParser(new CommonTokenStream(
+					new RoutesLexer(new ANTLRInputStream(in))));
+			this.parser.setErrorHandler(new BailErrorStrategy());
+			this.parser.setProvider(this);
+			try {
+				this.parser.config();
+			} catch (final Exception e) {
+				this.error(e);
+			}
+
+			this.loginPageURI = this.parser.getLoginPageURI();
+			this.protectedURIPattern = this.parser.getProtectedURIPattern();
+			this.publicURIPattern = this.parser.getPublicURIPattern();
+
+		} catch (final IOException e) {
+			this.error(e);
+		} finally {
+			this.parser = null;
+		}
+	}
+
+	/**
+	 * Convert exception to {@link UnavailableException} and throw it.
+	 *
+	 * @param e Original exception.
+	 *
+	 * @throws UnavailableException Always.
+	 */
+	private void error(final Exception e)
+		throws UnavailableException {
+
+		LogFactory.getLog(this.getClass()).error(
+				"error loading router configuration", e);
+		throw new UnavailableException("Error loading router configuration: " +
+				e.getMessage());
 	}
 
 	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.impl.AbstractRouterConfigurationProvider#getLoginPageURI(javax.servlet.ServletContext)
 	 */
 	@Override
-	protected String getLoginPageURI(final ServletContext sc)
-		throws UnavailableException {
+	protected String getLoginPageURI(final ServletContext sc) {
 
-		// TODO Auto-generated method stub
-		return null;
+		return this.loginPageURI;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.impl.AbstractRouterConfigurationProvider#getProtectedURIPattern(javax.servlet.ServletContext)
+	 */
+	@Override
+	protected String getProtectedURIPattern(final ServletContext sc) {
+
+		return this.protectedURIPattern;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.impl.AbstractRouterConfigurationProvider#getPublicURIPattern(javax.servlet.ServletContext)
+	 */
+	@Override
+	protected String getPublicURIPattern(final ServletContext sc) {
+
+		return this.publicURIPattern;
 	}
 }
