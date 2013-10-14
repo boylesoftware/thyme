@@ -17,32 +17,27 @@ package com.boylesoftware.web.impl.view;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.UnavailableException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.boylesoftware.web.spi.ViewSender;
-import com.boylesoftware.web.spi.ViewSenderProvider;
 
 
 /**
- * View sender provider implmentation that creates a view sender that wraps a
- * collection of other view senders and picks one depending on the view id
- * pattern.
+ * View sender implementation that wraps a collection of other view senders and
+ * picks one depending on the view id pattern.
  *
  * @author Lev Himmelfarb
  */
-public class MultiplexViewSenderProvider
-	implements ViewSenderProvider, ViewSender {
+public class MultiplexViewSender
+	implements ViewSender {
 
 	/**
 	 * View id pattern rule.
@@ -100,45 +95,25 @@ public class MultiplexViewSenderProvider
 	 */
 	private final ArrayList<Rule> rules = new ArrayList<>();
 
-	/**
-	 * Used providers.
-	 */
-	private Map<ViewSenderProvider, ViewSender> usedProviders = new HashMap<>();
-
 
 	/**
 	 * Associate the specified view id pattern with the corresponding view
-	 * sender provider. The order in which this method is called is important.
-	 * Patterns added earlier are matched first.
+	 * sender. The order in which this method is called is important. Patterns
+	 * added earlier are matched first.
 	 *
-	 * <p>This method cannot be called during regular application runtime. It
-	 * can be called only during application initialization.
+	 * <p>This method is not thread-safe and is supposed to be called only
+	 * during the application initialization.
 	 *
-	 * @param sc Servlet context.
 	 * @param pattern View id regular expression.
-	 * @param provider View sender provider. The same provider instance can be
-	 * used multiple times. Only a single view sender is used internally in that
-	 * case.
+	 * @param sender View sender.
 	 *
-	 * @return This multiplex view sender provider.
+	 * @return This multiplex view sender.
 	 *
 	 * @throws UnavailableException If an error happens.
-	 * @throws IllegalStateException If called after the application has been
-	 * initialized.
 	 */
-	public MultiplexViewSenderProvider addPattern(final ServletContext sc,
-			final String pattern, final ViewSenderProvider provider)
+	public MultiplexViewSender addPattern(final String pattern,
+			final ViewSender sender)
 		throws UnavailableException {
-
-		if (this.usedProviders == null)
-			throw new IllegalStateException("Can be called only during" +
-					" application initialization.");
-
-		ViewSender sender = this.usedProviders.get(provider);
-		if (sender == null) {
-			sender = provider.getViewSender(sc);
-			this.usedProviders.put(provider, sender);
-		}
 
 		try {
 			this.rules.add(new Rule(Pattern.compile(pattern), sender));
@@ -150,25 +125,6 @@ public class MultiplexViewSenderProvider
 		return this;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.ViewSenderProvider#getViewSender(javax.servlet.ServletContext)
-	 */
-	@Override
-	public ViewSender getViewSender(final ServletContext sc)
-		throws UnavailableException {
-
-		this.usedProviders.clear();
-		this.usedProviders = null;
-
-		if (this.rules.size() == 0)
-			throw new UnavailableException(
-					"Must add at least one view sender provider.");
-
-		this.rules.trimToSize();
-
-		return this;
-	}
 
 	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.spi.ViewSender#send(java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)

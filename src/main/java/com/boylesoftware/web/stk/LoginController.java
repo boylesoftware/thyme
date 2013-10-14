@@ -23,7 +23,7 @@ import com.boylesoftware.web.api.Authenticator;
 import com.boylesoftware.web.api.RequestParam;
 import com.boylesoftware.web.api.UserInput;
 import com.boylesoftware.web.api.UserInputErrors;
-import com.boylesoftware.web.impl.auth.UserRecordAuthenticator;
+import com.boylesoftware.web.api.UserRecordAuthenticator;
 
 
 /**

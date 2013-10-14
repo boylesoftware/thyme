@@ -17,7 +17,6 @@ package com.boylesoftware.web.impl.view;
 
 import java.io.IOException;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.boylesoftware.web.spi.ViewSender;
-import com.boylesoftware.web.spi.ViewSenderProvider;
 
 
 /**
@@ -35,28 +33,16 @@ import com.boylesoftware.web.spi.ViewSenderProvider;
  * views. The sender interprets the view id as a context-relative URI, to which
  * it forwards the request.
  *
- * <p>This implementation is also a {@link ViewSenderProvider}, which simply
- * returns its own instance.
- *
  * @author Lev Himmelfarb
  */
-public class DispatchViewSenderProvider
-	implements ViewSenderProvider, ViewSender {
+public class DispatchViewSender
+	implements ViewSender {
 
 	/**
 	 * The log.
 	 */
 	private final Log log = LogFactory.getLog(this.getClass());
 
-
-	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.ViewSenderProvider#getViewSender(javax.servlet.ServletContext)
-	 */
-	@Override
-	public ViewSender getViewSender(final ServletContext sc) {
-
-		return this;
-	}
 
 	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.spi.ViewSender#send(java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)

@@ -15,7 +15,6 @@
  */
 package com.boylesoftware.web.impl;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -24,6 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.UnavailableException;
 import javax.servlet.http.HttpServletRequest;
@@ -38,8 +38,11 @@ import com.boylesoftware.web.MethodNotAllowedException;
 import com.boylesoftware.web.api.Attributes;
 import com.boylesoftware.web.api.Routes;
 import com.boylesoftware.web.spi.Route.SecurityMode;
+import com.boylesoftware.web.spi.ControllerMethodArgHandlerProvider;
 import com.boylesoftware.web.spi.RouterConfiguration;
 import com.boylesoftware.web.spi.RouterRequest;
+import com.boylesoftware.web.spi.ViewSender;
+import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.FastPool;
 import com.boylesoftware.web.util.pool.PoolableObjectFactory;
 import com.boylesoftware.web.util.pool.PooledStringBuffer;
@@ -47,11 +50,11 @@ import com.boylesoftware.web.util.pool.StringBufferPool;
 
 
 /**
- * {@link RouterConfiguration} implementation.
+ * Abstract {@link RouterConfiguration} implementation.
  *
  * @author Lev Himmelfarb
  */
-class RouterConfigurationImpl
+public abstract class AbstractRouterConfiguration
 	implements RouterConfiguration, Routes {
 
 	/**
@@ -115,51 +118,43 @@ class RouterConfigurationImpl
 	/**
 	 * Create new router configuration object.
 	 *
+	 * @param sc Servlet context.
 	 * @param appServices The application services.
-	 * @param mappings The mappings. URI patterns in the mappings must be
-	 * configured in a way that no request URI ever can match more than one
-	 * mapping. Otherwise, the system's choice of matching mapping is
-	 * unpredictable. The URI patterns must match server root relative URIs.
-	 * @param contextPath Context path.
-	 * @param loginPageURI Context relative URI of the dedicated user login
-	 * page. Note, that {@code protectedURIPattern} and {@code publicURIPattern}
-	 * parameters must be configured in a way that makes the login page URI
-	 * public.
-	 * @param protectedURIPattern Pattern for URIs of resources, access to which
-	 * requires an authenticated user. If {@code null} and
-	 * {@code publicURIPattern} is specified, all URIs that do not match
-	 * {@code publicURIPattern} are considered protected. If both
-	 * {@code protectedURIPattern} and {@code publicURIPattern} parameters are
-	 * {@code null}, all URIs are considered public. The pattern, if specified,
-	 * must match server root relative request URIs.
-	 * @param publicURIPattern Pattern for URIs of resources, access to which
-	 * does not require an authenticated user. If {@code null}, all URIs that
-	 * do not match {@code protectedURIPattern} are considered public. If a URI
-	 * matches both {@code protectedURIPattern} and {@code publicURIPattern},
-	 * the resource is considered public. The pattern, if specified, must match
-	 * server root relative request URIs.
+	 * @param argHandlerProvider Controller method argument handler provider.
+	 * @param viewSender View sender.
 	 *
 	 * @throws UnavailableException If configuration is incorrect.
 	 */
-	RouterConfigurationImpl(final ApplicationServices appServices,
-			final Collection<RouteImpl> mappings, final String contextPath,
-			final String loginPageURI, final Pattern protectedURIPattern,
-			final Pattern publicURIPattern)
+	public AbstractRouterConfiguration(final ServletContext sc,
+			final ApplicationServices appServices,
+			final ControllerMethodArgHandlerProvider argHandlerProvider,
+			final ViewSender viewSender)
 		throws UnavailableException {
 
 		this.webapp = appServices.getApplication();
 
-		this.mappings = mappings.toArray(new RouteImpl[mappings.size()]);
+		final RoutesBuilder routesBuilder =
+			new RoutesBuilder(sc, argHandlerProvider, viewSender);
+		this.buildRoutes(sc, routesBuilder);
+		this.mappings = routesBuilder.getRoutes();
 
-		this.loginPageURI = loginPageURI;
+		this.loginPageURI = routesBuilder.getLoginPageURI();
+		if (this.loginPageURI == null)
+			throw new UnavailableException("Login page URI is not specified" +
+					" in the router configuration.");
 
+		final Pattern protectedURIPattern =
+			routesBuilder.getProtectedURIPattern();
+		final Pattern publicURIPattern =
+			routesBuilder.getPublicURIPattern();
 		this.protectedURIPattern = (protectedURIPattern != null ?
 				protectedURIPattern :
 					(publicURIPattern != null ? ANY_URI : NO_URI));
 		this.publicURIPattern = (publicURIPattern != null ?
 				publicURIPattern :
 					(protectedURIPattern != null ? NO_URI : ANY_URI));
-		final String fullLoginPageURI = contextPath + this.loginPageURI;
+		final String fullLoginPageURI =
+			StringUtils.emptyIfNull(sc.getContextPath()) + this.loginPageURI;
 		if (this.protectedURIPattern.matcher(fullLoginPageURI).matches() &&
 				!this.publicURIPattern.matcher(fullLoginPageURI).matches())
 			throw new UnavailableException("Provided login page URI" +
@@ -203,6 +198,23 @@ class RouterConfigurationImpl
 					}
 				}, "RouterRequestsPool");
 	}
+
+
+	/**
+	 * Build the route mappings. The implementation must call one of the
+	 * {@code addRoute} protected methods to add the route mappings.
+	 *
+	 * <p>Note, that the mappings must be configured in a way that no request
+	 * URI can ever match more than one mapping. If it does, the choice of the
+	 * mapping by the framework is unpredictable.
+	 *
+	 * @param sc Servlet context.
+	 * @param routes Builder, to which to add the routes.
+	 *
+	 * @throws UnavailableException If an error happens.
+	 */
+	protected abstract void buildRoutes(ServletContext sc, RoutesBuilder routes)
+		throws UnavailableException;
 
 
 	/* (non-Javadoc)

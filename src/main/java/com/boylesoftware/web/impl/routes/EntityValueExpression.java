@@ -64,8 +64,9 @@ class EntityValueExpression
 			final EntityManager em)
 		throws RequestedResourceException, ServletException {
 
-		final Object res =
-			em.find(this.entityClass, this.entityIdExpr.getValue(request, em));
+		final Object res = em.find(this.entityClass,
+				TypeConverter.toEntityId(em, this.entityClass,
+						this.entityIdExpr.getValue(request, em)));
 
 		if (res == null)
 			throw new NotFoundException();

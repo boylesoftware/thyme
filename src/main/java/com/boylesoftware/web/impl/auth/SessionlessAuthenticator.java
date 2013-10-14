@@ -20,12 +20,14 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.boylesoftware.web.api.UserRecordAuthenticator;
 import com.boylesoftware.web.spi.RouterRequest;
+import com.boylesoftware.web.spi.UserRecordHandler;
 
 
 /**
  * Authenticator API implementation provided by the
- * {@link SessionlessAuthenticationServiceProvider}.
+ * {@link SessionlessAuthenticationService}.
  *
  * @param <T> User record type.
  *
@@ -123,7 +125,7 @@ class SessionlessAuthenticator<T>
 	}
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordAuthenticator#getUserByLoginNameAndPassword(javax.persistence.EntityManager, java.lang.String, java.lang.String)
+	 * @see com.boylesoftware.web.api.UserRecordAuthenticator#getUserByLoginNameAndPassword(javax.persistence.EntityManager, java.lang.String, java.lang.String)
 	 */
 	@Override
 	public T getUserByLoginNameAndPassword(final EntityManager em,

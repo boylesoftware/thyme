@@ -67,7 +67,8 @@ class EntityRefValueExpression
 
 		try {
 			return em.getReference(this.entityClass,
-					this.entityIdExpr.getValue(request, em));
+					TypeConverter.toEntityId(em, this.entityClass,
+							this.entityIdExpr.getValue(request, em)));
 		} catch (final EntityNotFoundException e) {
 			throw new NotFoundException();
 		}

@@ -27,19 +27,24 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.servlet.UnavailableException;
+
+import com.boylesoftware.web.impl.RoutesBuilder;
+import com.boylesoftware.web.spi.Route.SecurityMode;
 }
 
 @members {
 
 /**
- * Parent provider.
+ * Routes builder.
  */
-private RoutesRouterConfigurationProvider provider;
+private RoutesBuilder routes;
 
 /**
- * Login page URI.
+ * Tells if login page URI has been already set.
  */
-private String loginPageURI;
+private boolean loginPageURISet = false;
 
 /**
  * Protected pages URI patterns.
@@ -68,45 +73,14 @@ private String viewsBase = "";
 
 
 /**
- * Set parent provider, to which to add the mappings. This method needs to be
+ * Set routes builder, to which to add the mappings. This method needs to be
  * called before the parser can be used.
  *
- * @param provider Reference to the parent provider.
+ * @param routes The routes builder.
  */
-void setProvider(final RoutesRouterConfigurationProvider provider) {
+void setRoutesBuilder(final RoutesBuilder routes) {
 
-	this.provider = provider;
-}
-
-
-/**
- * Get login page URI from the parsed configuration.
- *
- * @return Login page URI.
- */
-String getLoginPageURI() {
-
-	return this.loginPageURI;
-}
-
-/**
- * Get protected pages URI pattern from the parsed configuration.
- *
- * @return The pattern or {@code null}.
- */
-String getProtectedURIPattern() {
-
-	return this.combinePatterns(this.protectedURIPatterns);
-}
-
-/**
- * Get public pages URI pattern from the parsed configuration.
- *
- * @return The pattern or {@code null}.
- */
-String getPublicURIPattern() {
-
-	return this.combinePatterns(this.publicURIPatterns);
+	this.routes = routes;
 }
 
 
@@ -209,9 +183,10 @@ options {
 
 config
 @after {
-	if (this.loginPageURI == null)
-		throw new InvalidRoutesException("Router configuration does not" +
-				" contain information about the login page.");
+	this.routes.setProtectedURIPattern(
+			this.combinePatterns(this.protectedURIPatterns));
+	this.routes.setPublicURIPattern(
+			this.combinePatterns(this.publicURIPatterns));
 }
 	: declaration* initialDeclarations (declaration | mapping)* EOF
 	;
@@ -241,7 +216,8 @@ initialDeclarations
 loginPageDeclaration
 	: BEGIN_DECL_LOGIN_PAGE DECL_VALUE END_DECL {
 
-		this.loginPageURI = $DECL_VALUE.text;
+		this.routes.setLoginPageURI($DECL_VALUE.text);
+		this.loginPageURISet = true;
 	}
 	;
 
@@ -303,33 +279,36 @@ locals [String viewIdPattern, Object controllerObj]
 		controller? routeScript=script[true]?
 		MAPPING_ARROW view viewScript=script[false]? {
 
-		System.out.println(">>> MAPPING:");
-		System.out.println("    - id=[" + ($ROUTE_ID != null ? $ROUTE_ID.text.substring(1) : null) + "]");
-		System.out.println("    - uriPattern=[" + $URI_PATTERN.text + "]");
-		String mappingMode = "DEFAULT";
+		SecurityMode mappingMode = SecurityMode.DEFAULT;
 		if ($MAPPING_MODE != null) {
 			switch ($MAPPING_MODE.text.charAt(1)) {
 			case 'L':
-				if (this.loginPageURI != null)
-					throw new InvalidRoutesException("Login page is defined more than once.");
-				this.loginPageURI = $URI_PATTERN.text;
+				if (this.loginPageURISet)
+					throw new InvalidRoutesException(
+							"Login page is defined more than once.");
+				this.routes.setLoginPageURI($URI_PATTERN.text);
+				this.loginPageURISet = true;
 			case 'S':
-				mappingMode = "FORCE_SSL";
+				mappingMode = SecurityMode.FORCE_SSL;
 				break;
 			case 'U':
-				mappingMode = "FORCE_REQUIRE_AUTH";
+				mappingMode = SecurityMode.FORCE_REQUIRE_AUTH;
 			}
 		}
-		System.out.println("    - securityMode=[" + mappingMode + "]");
-		if ($ctx.routeScript != null) {
-			System.out.println("    - commonScript=" + $routeScript.scriptObj +
-				" [" + $routeScript.text + "]");
-		}
-		System.out.println("    - controller=[" + $controllerObj + "]");
-		System.out.println("    - viewIdPattern=[" + $viewIdPattern + "]");
-		if ($ctx.viewScript != null) {
-			System.out.println("    - viewScript=" + $viewScript.scriptObj +
-				" [" + $viewScript.text + "]");
+
+		try {
+			this.routes.addRoute(
+				($ROUTE_ID != null ? $ROUTE_ID.text.substring(1) : null),
+				$URI_PATTERN.text,
+				mappingMode,
+				($ctx.routeScript != null ? $routeScript.scriptObj : null),
+				$controllerObj,
+				$viewIdPattern,
+				($ctx.viewScript != null ? $viewScript.scriptObj : null));
+		} catch (final UnavailableException e) {
+			throw new InvalidRoutesException(
+				"Invalid route definition at line " + $start.getLine() + ".",
+				e);
 		}
 	}
 	;

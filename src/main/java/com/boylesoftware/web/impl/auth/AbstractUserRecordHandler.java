@@ -25,6 +25,7 @@ import javax.persistence.EntityManagerFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.boylesoftware.web.spi.UserRecordHandler;
 import com.boylesoftware.web.util.Hex;
 
 
@@ -62,7 +63,16 @@ public abstract class AbstractUserRecordHandler<T>
 
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordHandler#getUser(int, int, javax.persistence.EntityManagerFactory)
+	 * @see com.boylesoftware.web.spi.UserRecordHandler#getUserObjectClass()
+	 */
+	@Override
+	public Class<T> getUserObjectClass() {
+
+		return this.userRecordClass;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.spi.UserRecordHandler#getUser(int, int, javax.persistence.EntityManagerFactory)
 	 */
 	@Override
 	public T getUser(final int id, final int salt,

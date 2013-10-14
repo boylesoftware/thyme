@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.impl.auth;
+package com.boylesoftware.web.spi;
 
 
 /**

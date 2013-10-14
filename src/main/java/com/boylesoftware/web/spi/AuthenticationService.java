@@ -36,15 +36,7 @@ import com.boylesoftware.web.api.Authenticator;
  *
  * @author Lev Himmelfarb
  */
-// TODO: caching provider
 public interface AuthenticationService<T> {
-
-	/**
-	 * Get authenticated user object class.
-	 *
-	 * @return The authenticated user object class.
-	 */
-	Class<T> getAuthenticatedUserObjectClass();
 
 	/**
 	 * Get authenticated user for the request. The framework calls this method

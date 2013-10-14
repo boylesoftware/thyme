@@ -15,7 +15,13 @@
  */
 package com.boylesoftware.web.impl.routes;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+
 import javax.persistence.EntityManager;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
 
@@ -32,6 +38,11 @@ class ModelReferenceValueExpression
 	 */
 	private final String name;
 
+	/**
+	 * Name parts.
+	 */
+	private final String[] nameParts;
+
 
 	/**
 	 * Create new expression.
@@ -41,6 +52,7 @@ class ModelReferenceValueExpression
 	ModelReferenceValueExpression(final String name) {
 
 		this.name = name;
+		this.nameParts = name.split("\\.");
 	}
 
 
@@ -49,10 +61,56 @@ class ModelReferenceValueExpression
 	 */
 	@Override
 	public Object getValue(final HttpServletRequest request,
-			final EntityManager em) {
+			final EntityManager em)
+		throws ServletException {
 
-		// TODO: check request parameters, go into bean properties
-		;return request.getAttribute(this.name);
+		String paramVal = request.getParameter(this.name);
+		if (paramVal != null)
+			return paramVal;
+
+		return this.getBeanProperty(request.getAttribute(this.nameParts[0]), 1);
+	}
+
+	/**
+	 * Recursively get bean property.
+	 *
+	 * @param bean The bean.
+	 * @param namePartInd Index of the bean property name.
+	 *
+	 * @return The property value, or {@code null}.
+	 *
+	 * @throws ServletException If an error happens.
+	 */
+	private Object getBeanProperty(final Object bean, final int namePartInd)
+		throws ServletException {
+
+		if (bean == null)
+			return null;
+
+		if (namePartInd >= this.nameParts.length)
+			return bean;
+
+		try {
+			final BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
+
+			final String propName = this.nameParts[namePartInd];
+			for (final PropertyDescriptor propDesc :
+				beanInfo.getPropertyDescriptors()) {
+				if (propDesc.getName().equals(propName))
+					return this.getBeanProperty(
+							propDesc.getReadMethod().invoke(bean),
+							namePartInd + 1);
+			}
+
+			return null;
+
+		} catch (final IntrospectionException e) {
+			throw new ServletException(
+					"Error introspecting model component bean.", e);
+		} catch (final ReflectiveOperationException e) {
+			throw new ServletException(
+					"Error getting model component bean property.", e);
+		}
 	}
 
 

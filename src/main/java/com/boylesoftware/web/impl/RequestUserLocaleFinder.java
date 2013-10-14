@@ -13,54 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.impl.auth;
+package com.boylesoftware.web.impl;
 
-import com.boylesoftware.web.spi.UserRecordsCache;
+import java.util.Locale;
+
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+
+import com.boylesoftware.web.spi.UserLocaleFinder;
 
 
 /**
- * Stub {@link UserRecordsCache} implementation that does not cache anything.
- *
- * @param <T> User record type.
+ * {@link UserLocaleFinder} implementation that uses
+ * {@link ServletRequest#getLocale()} to determine the locale.
  *
  * @author Lev Himmelfarb
  */
-public class NopUserRecordsCache<T>
-	implements UserRecordsCache<T> {
+public class RequestUserLocaleFinder
+	implements UserLocaleFinder<Object> {
 
-	/**
-	 * Always returns {@code null}.
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.spi.UserLocaleFinder#getLocale(javax.servlet.http.HttpServletRequest, java.lang.Object)
 	 */
 	@Override
-	public T getUser(final int id) {
+	public Locale getLocale(final HttpServletRequest request,
+			final Object user) {
 
-		return null;
-	}
-
-	/**
-	 * Does nothing.
-	 */
-	@Override
-	public void storeUser(final int id, final T user) {
-
-		// nothing
-	}
-
-	/**
-	 * Does nothing.
-	 */
-	@Override
-	public void evictUser(final int id) {
-
-		// nothing
-	}
-
-	/**
-	 * Does nothing.
-	 */
-	@Override
-	public void evictAllUsers() {
-
-		// nothing
+		return request.getLocale();
 	}
 }

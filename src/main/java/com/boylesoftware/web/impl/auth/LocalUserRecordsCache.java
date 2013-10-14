@@ -20,6 +20,8 @@ import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.boylesoftware.web.spi.UserRecordsCache;
+
 
 /**
  * {@link UserRecordsCache} implementation that uses local hash map and soft
@@ -88,7 +90,7 @@ public class LocalUserRecordsCache<T>
 
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordsCache#getUser(int)
+	 * @see com.boylesoftware.web.spi.UserRecordsCache#getUser(int)
 	 */
 	@Override
 	public T getUser(final int id) {
@@ -108,7 +110,7 @@ public class LocalUserRecordsCache<T>
 	}
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordsCache#storeUser(int, java.lang.Object)
+	 * @see com.boylesoftware.web.spi.UserRecordsCache#storeUser(int, java.lang.Object)
 	 */
 	@Override
 	public void storeUser(final int id, final T user) {
@@ -118,7 +120,7 @@ public class LocalUserRecordsCache<T>
 	}
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordsCache#evictUser(int)
+	 * @see com.boylesoftware.web.spi.UserRecordsCache#evictUser(int)
 	 */
 	@Override
 	public void evictUser(final int id) {
@@ -129,7 +131,7 @@ public class LocalUserRecordsCache<T>
 	}
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.impl.auth.UserRecordsCache#evictAllUsers()
+	 * @see com.boylesoftware.web.spi.UserRecordsCache#evictAllUsers()
 	 */
 	@Override
 	public void evictAllUsers() {

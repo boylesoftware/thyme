@@ -69,8 +69,9 @@ public interface RouterRequest
 	 * simply attempts to get the authenticated user from the
 	 * {@link Attributes#AUTHED_USER} request attribute.
 	 *
-	 * @param <T> Authenticated user object class, the same returned by the
-	 * {@link AuthenticationService#getAuthenticatedUserObjectClass} method.
+	 * @param <T> Authenticated user object class. This is the class of the
+	 * object returned by the {@link AuthenticationService#getAuthenticatedUser}
+	 * method.
 	 *
 	 * @return Authenticated user, or {@code null} if the request is anonymous.
 	 */
@@ -79,8 +80,9 @@ public interface RouterRequest
 	/**
 	 * Get authenticator API.
 	 *
-	 * @param <T> Authenticated user object class, the same returned by the
-	 * {@link AuthenticationService#getAuthenticatedUserObjectClass} method.
+	 * @param <T> Authenticated user object class. This is the class of the
+	 * object returned by the {@link AuthenticationService#getAuthenticatedUser}
+	 * method.
 	 *
 	 * @return The authenticator API.
 	 */

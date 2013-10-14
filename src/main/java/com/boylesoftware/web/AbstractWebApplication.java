@@ -18,6 +18,8 @@ package com.boylesoftware.web;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
@@ -26,28 +28,33 @@ import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.UnavailableException;
+import javax.validation.MessageInterpolator;
+import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.boylesoftware.web.api.Routes;
-import com.boylesoftware.web.impl.DefaultEntityManagerFactoryProvider;
-import com.boylesoftware.web.impl.DefaultValidatorFactoryProvider;
-import com.boylesoftware.web.impl.FixedThreadPoolExecutorServiceProvider;
-import com.boylesoftware.web.impl.RequestUserLocaleFinderProvider;
+import com.boylesoftware.web.impl.RequestUserLocaleFinder;
+import com.boylesoftware.web.impl.StandardControllerMethodArgHandlerProvider;
+import com.boylesoftware.web.impl.auth.LocalUserRecordsCache;
+import com.boylesoftware.web.impl.auth.SessionlessAuthenticationService;
+import com.boylesoftware.web.impl.routes.RoutesRouterConfiguration;
+import com.boylesoftware.web.impl.view.DispatchViewSender;
+import com.boylesoftware.web.impl.view.MultiplexViewSender;
 import com.boylesoftware.web.spi.AuthenticationService;
-import com.boylesoftware.web.spi.AuthenticationServiceProvider;
-import com.boylesoftware.web.spi.EntityManagerFactoryProvider;
-import com.boylesoftware.web.spi.ExecutorServiceProvider;
+import com.boylesoftware.web.spi.ControllerMethodArgHandlerProvider;
 import com.boylesoftware.web.spi.RouterConfiguration;
-import com.boylesoftware.web.spi.RouterConfigurationProvider;
-import com.boylesoftware.web.spi.UserLocaleFinderProvider;
-import com.boylesoftware.web.spi.ValidatorFactoryProvider;
+import com.boylesoftware.web.spi.UserLocaleFinder;
+import com.boylesoftware.web.spi.UserRecordHandler;
+import com.boylesoftware.web.spi.UserRecordsCache;
+import com.boylesoftware.web.spi.ViewSender;
 
 
 /**
@@ -59,6 +66,16 @@ import com.boylesoftware.web.spi.ValidatorFactoryProvider;
  */
 public abstract class AbstractWebApplication
 	implements ApplicationConfiguration, ServletContextListener {
+
+	/**
+	 * Default number of threads.
+	 */
+	public static final int DEFAULT_ASYNC_THREADS = 10;
+
+	/**
+	 * Default persistence unit name.
+	 */
+	public static final String DEFAULT_PU_NAME = "pu";
 
 	/**
 	 * Name of servlet context attribute used to store the web application
@@ -157,26 +174,22 @@ public abstract class AbstractWebApplication
 			final ServletContext sc = this.servletContext;
 			log.debug("creating authenticator");
 			this.services.setAuthenticationService(
-					this.getAuthenticationServiceProvider()
-					.getAuthenticationService(sc, this));
+					this.getAuthenticationService(sc, this));
 
 			// get validator factory
 			log.debug("creating validator factory");
 			this.services.setValidatorFactory(
-					this.getValidatorFactoryProvider()
-					.getValidatorFactory(sc, this));
+					this.getValidatorFactory(sc, this));
 
 			// get user locale finder
 			log.debug("creating user locale finder");
 			this.services.setUserLocaleFinder(
-					this.getUserLocaleFinderProvider()
-					.getUserLocaleFinder(sc, this));
+					this.getUserLocaleFinder(sc, this));
 
 			// create entity manager factory
 			log.debug("creating persistence manager factory");
 			this.services.setEntityManagerFactory(
-					this.getEntityManagerFactoryProvider()
-					.getEntityManagerFactory(sc, this));
+					this.getEntityManagerFactory(sc, this));
 
 			// get JavaMail session from the JNDI
 			log.debug("attempting to find JavaMail session in the JNDI");
@@ -199,8 +212,7 @@ public abstract class AbstractWebApplication
 			// get the router configuration
 			log.debug("creating routes configuration");
 			this.routerConfiguration =
-				this.getRouterConfigurationProvider()
-				.getRouterConfiguration(sc, this, this.services);
+				this.getRouterConfiguration(sc, this, this.services);
 
 			// initialize custom application
 			log.debug("initializing custom application");
@@ -208,8 +220,7 @@ public abstract class AbstractWebApplication
 
 			// get the executor service
 			log.debug("creating request processing executor service");
-			this.executors =
-				this.getExecutorServiceProvider().getExecutorService(sc, this);
+			this.executors = this.getExecutorService(sc, this);
 
 			// done
 			log.debug("initialized successfully");
@@ -505,77 +516,321 @@ public abstract class AbstractWebApplication
 
 
 	/**
-	 * Get provider of the executor service used to asynchronously process
-	 * requests. The method is called once during the application
+	 * Get executor service. This method is called once during the application
+	 * initialization. The executor service is automatically shut down by the
+	 * framework when the application goes down.
+	 *
+	 * <p>Default implementation returns a fixed size thread pool with number
+	 * of threads specified by the
+	 * {@link ApplicationConfiguration#ASYNC_THREADS} application configuration
+	 * property. If the application configuration property is undefined, default
+	 * number of threads is {@value #DEFAULT_ASYNC_THREADS}.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return The executor service.
+	 *
+	 * @throws UnavailableException If the executor service is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	@SuppressWarnings("unused")
+	protected ExecutorService getExecutorService(final ServletContext sc,
+			final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		final ThreadGroup threadGroup = new ThreadGroup("AsyncExecutors");
+
+		final int numThreads = config.getConfigProperty(
+				ApplicationConfiguration.ASYNC_THREADS, Integer.class,
+				Integer.valueOf(DEFAULT_ASYNC_THREADS)).intValue();
+
+		return Executors.newFixedThreadPool(numThreads, new ThreadFactory() {
+
+			private int nextThreadNum = 0;
+
+			@Override
+			public Thread newThread(final Runnable r) {
+
+				final String threadName =
+					"async-executor-" + (this.nextThreadNum++);
+
+				LogFactory.getLog(this.getClass()).debug(
+						"starting asynchronous request processing thread " +
+								threadName);
+
+				return new Thread(threadGroup, r, threadName);
+			}
+		});
+	}
+
+	/**
+	 * Get the authentication service. This method is called once during the
+	 * application initialization.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return The authenticator.
+	 *
+	 * @throws UnavailableException If authentication service is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	protected AuthenticationService<?> getAuthenticationService(
+			final ServletContext sc, final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		return new SessionlessAuthenticationService(
+				this.getUserRecordHandler(sc, config),
+				this.getUserRecordsCache(sc, config));
+	}
+
+	/**
+	 * Get user record handler used by the authentication service. This method
+	 * is called once during the application initialization.
+	 *
+	 * <p>Since there is no generic user record handler implementation, this
+	 * method, unless overridden, throws an {@link UnavailableException}, so
+	 * that if the application uses an authentication service that works with
+	 * persistent user account records, it must override this method and provide
+	 * an application-specific implementation of the user record handler.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return User record handler.
+	 *
+	 * @throws UnavailableException If user record handler is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	@SuppressWarnings("unused")
+	protected UserRecordHandler<?> getUserRecordHandler(final ServletContext sc,
+			final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		throw new UnavailableException("Application uses user record" +
+				" authentication service implementation, but user record" +
+				" handler is not provided.");
+	}
+
+	/**
+	 * Get user records cache implementation used by the authentication service.
+	 * This method is called once during the application initialization.
+	 *
+	 * <p>Default implementation returns a {@link LocalUserRecordsCache}.
+	 * <b>Note, that local cache does is not suitable for a distributed
+	 * environment.</b>
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return User records cache implementation.
+	 *
+	 * @throws UnavailableException If user records cache implementation is
+	 * unavailable. Throwing this exception makes the web-application fail to
+	 * start.
+	 */
+	@SuppressWarnings("unused")
+	protected UserRecordsCache<?> getUserRecordsCache(final ServletContext sc,
+			final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		return new LocalUserRecordsCache<>();
+	}
+
+	/**
+	 * Get entity manager factory. This method is called once during the
+	 * application initialization. The entity manager factory is automatically
+	 * closed by the framework when the application shuts down.
+	 *
+	 * <p>Default implementation uses
+	 * {@link Persistence#createEntityManagerFactory(String)} method to create
+	 * the entity manager factory. The persistence unit name is taken from the
+	 * {@link ApplicationConfiguration#PU_NAME} application configuration
+	 * property with default name {@value #DEFAULT_PU_NAME}.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return Entity manager factory.
+	 *
+	 * @throws UnavailableException If entity manager factory is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	@SuppressWarnings("unused")
+	protected EntityManagerFactory getEntityManagerFactory(
+			final ServletContext sc, final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		return Persistence.createEntityManagerFactory(
+				config.getConfigProperty(ApplicationConfiguration.PU_NAME,
+						String.class, DEFAULT_PU_NAME));
+	}
+
+	/**
+	 * Get validator factory used for validating user input (such as submitted
+	 * HTML forms). This method is called once during the application
 	 * initialization.
 	 *
-	 * <p>The default implementation returns
-	 * {@link FixedThreadPoolExecutorServiceProvider}.
+	 * <p>Default implementation uses default validation provider (see
+	 * {@link Validation#byDefaultProvider()} and optionally a custom
+	 * {@link MessageInterpolator} returned by the
+	 * {@link #getValidatorMessageInterpolator} method.
 	 *
-	 * @return The executor service provider.
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return Validator factory.
+	 *
+	 * @throws UnavailableException If validator factory is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
 	 */
-	protected ExecutorServiceProvider getExecutorServiceProvider() {
+	protected ValidatorFactory getValidatorFactory(final ServletContext sc,
+			final ApplicationConfiguration config)
+		throws UnavailableException {
 
-		return new FixedThreadPoolExecutorServiceProvider();
+		final MessageInterpolator messageInterpolator =
+			this.getValidatorMessageInterpolator(sc, config);
+
+		if (messageInterpolator == null)
+			return Validation.buildDefaultValidatorFactory();
+
+		return Validation
+				.byDefaultProvider()
+				.configure()
+				.messageInterpolator(messageInterpolator)
+				.buildValidatorFactory();
 	}
 
 	/**
-	 * Get authentication service provider. The method is called once during the
-	 * application initialization.
+	 * Get message interpolator for the user input validator. The method is
+	 * called once during the application initialization.
 	 *
-	 * @return The authentication service provider.
+	 * <p>Default implementation returns {@code null} to use the default
+	 * message interpolator.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return Message interpolator, or {@code null} to use the default.
+	 *
+	 * @throws UnavailableException If an error happens getting the message
+	 * interpolator. Throwing this exception makes the web-application fail to
+	 * start.
 	 */
-	protected abstract AuthenticationServiceProvider<?>
-	getAuthenticationServiceProvider();
+	@SuppressWarnings("unused")
+	protected MessageInterpolator getValidatorMessageInterpolator(
+			final ServletContext sc, final ApplicationConfiguration config)
+		throws UnavailableException {
 
-	/**
-	 * Get entity manager factory provider. The method is called once during the
-	 * application initialization.
-	 *
-	 * <p>The default implementation returns
-	 * {@link DefaultEntityManagerFactoryProvider}.
-	 *
-	 * @return Entity manager factory provider.
-	 */
-	protected EntityManagerFactoryProvider getEntityManagerFactoryProvider() {
-
-		return new DefaultEntityManagerFactoryProvider();
+		return null;
 	}
 
 	/**
-	 * Get validator factory provider. The method is called once during the
-	 * application initialization.
-	 *
-	 * <p>The default implementation returns
-	 * {@link DefaultValidatorFactoryProvider}.
-	 *
-	 * @return Validator factory provider.
-	 */
-	protected ValidatorFactoryProvider getValidatorFactoryProvider() {
-
-		return new DefaultValidatorFactoryProvider();
-	}
-
-	/**
-	 * Get user locale finder provider. The method is called once during the
-	 * application initialization.
-	 *
-	 * <p>The default implementation returns
-	 * {@link RequestUserLocaleFinderProvider}.
-	 *
-	 * @return User locale finder provider.
-	 */
-	protected UserLocaleFinderProvider getUserLocaleFinderProvider() {
-
-		return new RequestUserLocaleFinderProvider();
-	}
-
-	/**
-	 * Get routes provider. The method is called once during the application
+	 * Get user locale finder. This method is called during the application
 	 * initialization.
 	 *
-	 * @return Routes provider.
+	 * <p>Default implementation returns {@link RequestUserLocaleFinder}.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 *
+	 * @return User locale finder.
+	 *
+	 * @throws UnavailableException If user locale finder is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
 	 */
-	protected abstract RouterConfigurationProvider
-	getRouterConfigurationProvider();
+	@SuppressWarnings("unused")
+	protected UserLocaleFinder<?> getUserLocaleFinder(final ServletContext sc,
+			final ApplicationConfiguration config)
+		throws UnavailableException {
+
+		return new RequestUserLocaleFinder();
+	}
+
+	/**
+	 * Get the router configuration. This method is called once during the
+	 * application initialization.
+	 *
+	 * <p>Default implementation returns {@link RoutesRouterConfiguration}
+	 * configured with view sender and controller method argument handler
+	 * provider returned by the {@link #getViewSender} and
+	 * {@link #getControllerMethodArgHandlerProvider} methods.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 * @param appServices Application services.
+	 *
+	 * @return The routes.
+	 *
+	 * @throws UnavailableException If routing configuration is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	protected RouterConfiguration getRouterConfiguration(
+			final ServletContext sc, final ApplicationConfiguration config,
+			final ApplicationServices appServices)
+		throws UnavailableException {
+
+		return new RoutesRouterConfiguration(sc, appServices,
+				this.getControllerMethodArgHandlerProvider(sc, config,
+						appServices),
+				this.getViewSender(sc, config, appServices));
+	}
+
+	/**
+	 * Get view sender. This method is called once during the application
+	 * initialization.
+	 *
+	 * <p>Default implementation returns a {@link MultiplexViewSender}
+	 * configured with all view senders provided by the framework out-of-the-box
+	 * mapped using corresponding template file extensions.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 * @param appServices Application services.
+	 *
+	 * @return View sender provider.
+	 *
+	 * @throws UnavailableException If view sender provider is unavailable.
+	 * Throwing this exception makes the web-application fail to start.
+	 */
+	@SuppressWarnings("unused")
+	protected ViewSender getViewSender(final ServletContext sc,
+			final ApplicationConfiguration config,
+			final ApplicationServices appServices)
+		throws UnavailableException {
+
+		final MultiplexViewSender sender = new MultiplexViewSender();
+		sender.addPattern(".*\\.jspx?", new DispatchViewSender());
+
+		return sender;
+	}
+
+	/**
+	 * Get controller method argument handlers provider. This method is called
+	 * once during the application initialization.
+	 *
+	 * <p>Default implementation returns a
+	 * {@link StandardControllerMethodArgHandlerProvider}.
+	 *
+	 * @param sc Servlet context.
+	 * @param config Application configuration.
+	 * @param appServices Application services.
+	 *
+	 * @return Controller method argument handlers provider.
+	 *
+	 * @throws UnavailableException If controller method argument handlers
+	 * provider is unavailable. Throwing this exception makes the
+	 * web-application fail to start.
+	 */
+	@SuppressWarnings("unused")
+	protected ControllerMethodArgHandlerProvider
+	getControllerMethodArgHandlerProvider(final ServletContext sc,
+			final ApplicationConfiguration config,
+			final ApplicationServices appServices)
+		throws UnavailableException {
+
+		return new StandardControllerMethodArgHandlerProvider(appServices);
+	}
 }

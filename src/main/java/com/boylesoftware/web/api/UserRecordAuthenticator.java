@@ -13,35 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.boylesoftware.web.impl.auth;
+package com.boylesoftware.web.api;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+
+import com.boylesoftware.web.api.Authenticator;
 
 
 /**
- * Interface for application specific handler of user account records. The
- * handler presents the application specific user records to the framework in a
- * standardized way.
+ * {@link Authenticator} interface extension that provides additional API for
+ * authentication service implementations that store user account records in the
+ * application's database.
  *
  * @param <T> User record type.
  *
  * @author Lev Himmelfarb
  */
-public interface UserRecordHandler<T> {
-
-	/**
-	 * Get user record given the user id and salt.
-	 *
-	 * @param id User id.
-	 * @param salt Salt.
-	 * @param emf Entity manager factory to use to lookup the user record in the
-	 * persistent storage.
-	 *
-	 * @return User record, or {@code null} if none match the specified id and
-	 * salt.
-	 */
-	T getUser(int id, int salt, EntityManagerFactory emf);
+public interface UserRecordAuthenticator<T>
+	extends Authenticator<T> {
 
 	/**
 	 * Get user record given user login name and password.
@@ -56,22 +45,4 @@ public interface UserRecordHandler<T> {
 	 */
 	T getUserByLoginNameAndPassword(EntityManager em, String loginName,
 			String password);
-
-	/**
-	 * Given user record, get user id.
-	 *
-	 * @param user User record.
-	 *
-	 * @return User id.
-	 */
-	int getUserId(T user);
-
-	/**
-	 * Given user record, get salt associated with it.
-	 *
-	 * @param user User record.
-	 *
-	 * @return Salt value.
-	 */
-	int getUserSalt(T user);
 }

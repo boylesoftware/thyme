@@ -19,7 +19,11 @@ import java.security.Key;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.crypto.spec.SecretKeySpec;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.persistence.EntityManagerFactory;
+import javax.servlet.UnavailableException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,20 +33,28 @@ import org.apache.commons.logging.LogFactory;
 import com.boylesoftware.web.api.Authenticator;
 import com.boylesoftware.web.spi.AuthenticationService;
 import com.boylesoftware.web.spi.RouterRequest;
+import com.boylesoftware.web.spi.UserRecordHandler;
+import com.boylesoftware.web.spi.UserRecordsCache;
+import com.boylesoftware.web.util.Hex;
 import com.boylesoftware.web.util.StringUtils;
 import com.boylesoftware.web.util.pool.FastPool;
 import com.boylesoftware.web.util.pool.PoolableObjectFactory;
 
 
 /**
- * Authentication service implementation provided by the
- * {@link SessionlessAuthenticationServiceProvider}.
+ * {@link AuthenticationService} implementation that does not rely on servlet
+ * container's HTTP session tracking and stores all necessary authenticated user
+ * information in an encrypted cookie.
+ *
+ * <p>The service implementation requires a 128-bit AES encryption algorithm
+ * secret key in the JNDI environment. The name of the environment entry is
+ * "java:comp/env/secretKey" and it should be a string in hexadecimal encoding.
  *
  * @param <T> User record type.
  *
  * @author Lev Himmelfarb
  */
-class SessionlessAuthenticationService<T>
+public class SessionlessAuthenticationService<T>
 	implements AuthenticationService<T> {
 
 	/**
@@ -71,11 +83,6 @@ class SessionlessAuthenticationService<T>
 	private final Log log = LogFactory.getLog(this.getClass());
 
 	/**
-	 * User record class.
-	 */
-	private final Class<T> userRecordClass;
-
-	/**
 	 * User record handler.
 	 */
 	private final UserRecordHandler<T> userRecordHandler;
@@ -94,20 +101,41 @@ class SessionlessAuthenticationService<T>
 	/**
 	 * Create new authenticator.
 	 *
-	 * @param secretKey Key for encrypting the authentication cookie.
-	 * @param userRecordClass User record class.
 	 * @param userRecordHandler User record handler.
 	 * @param userRecordsCache Authenticated user records cache.
+	 *
+	 * @throws UnavailableException If an error happens creating the service.
 	 */
-	SessionlessAuthenticationService(final Key secretKey,
-			final Class<T> userRecordClass,
+	public SessionlessAuthenticationService(
 			final UserRecordHandler<T> userRecordHandler,
-			final UserRecordsCache<T> userRecordsCache) {
+			final UserRecordsCache<T> userRecordsCache)
+		throws UnavailableException {
 
-		this.userRecordClass = userRecordClass;
+		// store the references
 		this.userRecordHandler = userRecordHandler;
 		this.userRecordsCache = userRecordsCache;
 
+		// get configured secret key from the JNDI
+		String secretKeyStr;
+		try {
+			final InitialContext jndi = new InitialContext();
+			try {
+				secretKeyStr = (String) jndi.lookup("java:comp/env/secretKey");
+			} finally {
+				jndi.close();
+			}
+		} catch (final NamingException e) {
+			throw new UnavailableException(
+					"Error looking up secret key in the JNDI: " + e);
+		}
+		if (!secretKeyStr.matches("[0-9A-Fa-f]{32}"))
+			throw new UnavailableException("Configured secret key is" +
+					" invalid. The key must be a 16 bytes value" +
+					" encoded as a hexadecimal string.");
+		final Key secretKey = new SecretKeySpec(
+				Hex.decode(secretKeyStr), CipherToolbox.ALGORITHM);
+
+		// create the cipher pool
 		this.cipherPool =
 			new FastPool<>(new PoolableObjectFactory<CipherToolbox>() {
 
@@ -197,15 +225,6 @@ class SessionlessAuthenticationService<T>
 		request.setAttribute(PENDING_CACHE_EVICTIONS_ATTNAME, EVICT_ALL);
 	}
 
-
-	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.AuthenticationService#getAuthenticatedUserObjectClass()
-	 */
-	@Override
-	public Class<T> getAuthenticatedUserObjectClass() {
-
-		return this.userRecordClass;
-	}
 
 	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.spi.AuthenticationService#getAuthenticatedUser(javax.servlet.http.HttpServletRequest, javax.persistence.EntityManagerFactory)
