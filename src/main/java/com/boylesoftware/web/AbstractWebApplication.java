@@ -568,6 +568,9 @@ public abstract class AbstractWebApplication
 	 * Get the authentication service. This method is called once during the
 	 * application initialization.
 	 *
+	 * <p>Default implementation returns a
+	 * {@link SessionlessAuthenticationService}.
+	 *
 	 * @param sc Servlet context.
 	 * @param config Application configuration.
 	 *
