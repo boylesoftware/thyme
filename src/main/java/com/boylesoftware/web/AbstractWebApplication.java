@@ -43,7 +43,7 @@ import org.apache.commons.logging.LogFactory;
 import com.boylesoftware.web.api.Routes;
 import com.boylesoftware.web.impl.RequestUserLocaleFinder;
 import com.boylesoftware.web.impl.StandardControllerMethodArgHandlerProvider;
-import com.boylesoftware.web.impl.auth.LocalUserRecordsCache;
+import com.boylesoftware.web.impl.auth.NopUserRecordsCache;
 import com.boylesoftware.web.impl.auth.SessionlessAuthenticationService;
 import com.boylesoftware.web.impl.routes.RoutesRouterConfiguration;
 import com.boylesoftware.web.impl.view.DispatchViewSender;
@@ -621,9 +621,7 @@ public abstract class AbstractWebApplication
 	 * Get user records cache implementation used by the authentication service.
 	 * This method is called once during the application initialization.
 	 *
-	 * <p>Default implementation returns a {@link LocalUserRecordsCache}.
-	 * <b>Note, that local cache does is not suitable for a distributed
-	 * environment.</b>
+	 * <p>Default implementation returns a {@link NopUserRecordsCache}.
 	 *
 	 * @param sc Servlet context.
 	 * @param config Application configuration.
@@ -639,7 +637,7 @@ public abstract class AbstractWebApplication
 			final ApplicationConfiguration config)
 		throws UnavailableException {
 
-		return new LocalUserRecordsCache<>();
+		return new NopUserRecordsCache<>();
 	}
 
 	/**
