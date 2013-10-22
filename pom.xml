@@ -50,6 +50,11 @@
 		<tag>HEAD</tag>
 	</scm>
 
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/boylesoftware/thyme/issues</url>
+	</issueManagement>
+
 	<repositories>
 		<repository>
 			<id>boylesoftware-os</id>
