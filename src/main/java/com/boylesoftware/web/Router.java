@@ -289,7 +289,7 @@ class Router {
 		} else if ((routerReq.getRoute().getSecurityMode() ==
 							SecurityMode.FORCE_REQUIRE_AUTH) ||
 						routerReq.isAuthenticationRequired()) {
-			this.sendRedirectToLoginPage(webapp, routerReq, response);
+			this.sendRequestForAuthentication(webapp, routerReq, response);
 			return true;
 		}
 
@@ -315,7 +315,8 @@ class Router {
 	}
 
 	/**
-	 * Send redirect to the login page.
+	 * Send request for user authentication, which can be a redirect to the
+	 * login page, or the 401 HTTP code.
 	 *
 	 * @param webapp The web-application.
 	 * @param request The HTTP request.
@@ -323,43 +324,55 @@ class Router {
 	 *
 	 * @throws ServletException If an error happens.
 	 */
-	private void sendRedirectToLoginPage(final AbstractWebApplication webapp,
+	private void sendRequestForAuthentication(
+			final AbstractWebApplication webapp,
 			final HttpServletRequest request,
 			final HttpServletResponse response)
 		throws ServletException {
 
 		LooseCannon.heel();
 
-		try (final PooledStringBuffer buf = StringBufferPool.get()) {
-			final StringBuilder sb = buf.getStringBuilder();
+		final String loginPageURI =
+			webapp.getRouterConfiguration().getLoginPageURI();
+		if (loginPageURI != null) {
 
-			sb.append(request.getRequestURI());
-			final String queryString = request.getQueryString();
-			if (queryString != null)
-				sb.append('?').append(queryString);
-			final String targetURI = sb.toString();
-			sb.setLength(0);
+			try (final PooledStringBuffer buf = StringBufferPool.get()) {
+				final StringBuilder sb = buf.getStringBuilder();
 
-			sb.append("https://").append(request.getServerName());
+				sb.append(request.getRequestURI());
+				final String queryString = request.getQueryString();
+				if (queryString != null)
+					sb.append('?').append(queryString);
+				final String targetURI = sb.toString();
+				sb.setLength(0);
 
-			final int httpsPort = webapp.getHTTPSPort();
-			if (httpsPort != 443)
-				sb.append(':').append(httpsPort);
+				sb.append("https://").append(request.getServerName());
 
-			sb.append(StringUtils.emptyIfNull(request.getContextPath()))
-				.append(webapp.getRouterConfiguration().getLoginPageURI())
-				.append('?').append(Authenticator.TARGET_URI)
-				.append('=');
+				final int httpsPort = webapp.getHTTPSPort();
+				if (httpsPort != 443)
+					sb.append(':').append(httpsPort);
 
-			try {
-				sb.append(
-						URLEncoder.encode(targetURI, "UTF-8"));
-			} catch (final UnsupportedEncodingException e) {
-				throw new ServletException("UTF-8 is unsupported.", e);
+				sb.append(StringUtils.emptyIfNull(request.getContextPath()))
+					.append(loginPageURI)
+					.append('?').append(Authenticator.TARGET_URI)
+					.append('=');
+
+				try {
+					sb.append(
+							URLEncoder.encode(targetURI, "UTF-8"));
+				} catch (final UnsupportedEncodingException e) {
+					throw new ServletException("UTF-8 is unsupported.", e);
+				}
+
+				response.setStatus(HttpServletResponse.SC_SEE_OTHER);
+				response.setHeader("Location", sb.toString());
 			}
 
-			response.setStatus(HttpServletResponse.SC_SEE_OTHER);
-			response.setHeader("Location", sb.toString());
+		} else {
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			// TODO: configure realm in the application configuration
+			response.setHeader("WWW-Authenticate",
+					"Basic realm=\"Application\"");
 		}
 	}
 

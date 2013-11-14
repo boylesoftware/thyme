@@ -61,7 +61,9 @@ public interface RouterConfiguration {
 	 * Get URI of the application's user login page.
 	 *
 	 * @return Login page URI, which is a context relative URL without a query
-	 * string.
+	 * string, or {@code null} if the router configuration does not include
+	 * information about the login page URI, in which case the framework will
+	 * attempt to use basic HTTP authentication.
 	 */
 	String getLoginPageURI();
 

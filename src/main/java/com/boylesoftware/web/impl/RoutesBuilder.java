@@ -143,7 +143,7 @@ public class RoutesBuilder {
 	}
 
 	/**
-	 * Set URI of the dedicated user login page. The login page URI must be set
+	 * Set URI of the dedicated user login page. The login page URI can be set
 	 * using this method in the {@link AbstractRouterConfiguration#buildRoutes}
 	 * method implementation.
 	 *
@@ -207,7 +207,8 @@ public class RoutesBuilder {
 	/**
 	 * Get login page URI.
 	 *
-	 * @return Context-relative login page URI.
+	 * @return Context-relative login page URI, or {@code null} if the router
+	 * configuration does not include login page URI.
 	 */
 	String getLoginPageURI() {
 

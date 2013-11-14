@@ -139,9 +139,6 @@ public abstract class AbstractRouterConfiguration
 		this.mappings = routesBuilder.getRoutes();
 
 		this.loginPageURI = routesBuilder.getLoginPageURI();
-		if (this.loginPageURI == null)
-			throw new UnavailableException("Login page URI is not specified" +
-					" in the router configuration.");
 
 		final Pattern protectedURIPattern =
 			routesBuilder.getProtectedURIPattern();
@@ -153,19 +150,24 @@ public abstract class AbstractRouterConfiguration
 		this.publicURIPattern = (publicURIPattern != null ?
 				publicURIPattern :
 					(protectedURIPattern != null ? NO_URI : ANY_URI));
-		final String fullLoginPageURI =
-			StringUtils.emptyIfNull(sc.getContextPath()) + this.loginPageURI;
-		if (this.protectedURIPattern.matcher(fullLoginPageURI).matches() &&
-				!this.publicURIPattern.matcher(fullLoginPageURI).matches())
-			throw new UnavailableException("Provided login page URI" +
-				" requires an authenticated user. Check the protected and" +
-				" public URI patterns.");
+		final String fullLoginPageURI = (this.loginPageURI != null ?
+				StringUtils.emptyIfNull(sc.getContextPath()) +
+				this.loginPageURI : null);
+		if (fullLoginPageURI != null) {
+			if (this.protectedURIPattern.matcher(fullLoginPageURI).matches() &&
+					!this.publicURIPattern.matcher(fullLoginPageURI).matches())
+				throw new UnavailableException("Provided login page URI" +
+					" requires an authenticated user. Check the protected and" +
+					" public URI patterns.");
+		}
 
 		final int numMappings = this.mappings.length;
 		this.mappingsById = new HashMap<>(numMappings);
 		for (int i = 0; i < numMappings; i++) {
 			RouteImpl mapping = this.mappings[i];
-			if (mapping.getURIPattern().matcher(fullLoginPageURI).matches()) {
+			if ((fullLoginPageURI != null) &&
+					mapping.getURIPattern().matcher(fullLoginPageURI)
+						.matches()) {
 				switch (mapping.getSecurityMode()) {
 				case DEFAULT:
 					this.mappings[i] = mapping =
@@ -407,6 +409,7 @@ public abstract class AbstractRouterConfiguration
 
 			// build full URL
 			final StringBuilder urlSB = buf.getStringBuilder();
+			urlSB.setLength(0);
 			if (needsSSL)
 				urlSB.append("https://");
 			else
