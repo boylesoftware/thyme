@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.TagSupport;
 
 import com.boylesoftware.web.util.EntityUtils;
 
@@ -31,7 +30,7 @@ import com.boylesoftware.web.util.EntityUtils;
  * @author Lev Himmelfarb
  */
 public class InputTag
-	extends TagSupport {
+	extends AbstractInputTag {
 
 	/**
 	 * Serial version id.
@@ -55,27 +54,7 @@ public class InputTag
 	/**
 	 * Input field type.
 	 */
-	private String type;
-
-	/**
-	 * Input field name.
-	 */
-	private String name;
-
-	/**
-	 * Entity bean behind the input, if any.
-	 */
-	private Object bean;
-
-	/**
-	 * Entity bean field name if different from the input field name.
-	 */
-	private String beanField;
-
-	/**
-	 * If input is required.
-	 */
-	private String required;
+	private String type = "text";
 
 
 	/**
@@ -89,7 +68,7 @@ public class InputTag
 	}
 
 	/**
-	 * Set "type" attribute.
+	 * Set "type" attribute. Default is "text".
 	 *
 	 * @param type Attribute value.
 	 */
@@ -98,94 +77,80 @@ public class InputTag
 		this.type = type;
 	}
 
-	/**
-	 * Get "name" attribute.
-	 *
-	 * @return Attribute value.
-	 */
-	public String getName() {
-
-		return this.name;
-	}
-
-	/**
-	 * Set "name" attribute.
-	 *
-	 * @param name Attribute value.
-	 */
-	public void setName(String name) {
-
-		this.name = name;
-	}
-
-	/**
-	 * Get "required" attribute.
-	 *
-	 * @return Attribute value.
-	 */
-	public String getRequired() {
-
-		return this.required;
-	}
-
-	/**
-	 * Set "required" attribute. Default is not required.
-	 *
-	 * @param required Attribute value.
-	 */
-	public void setRequired(String required) {
-
-		this.required = required;
-	}
-
-	/**
-	 * Get "bean" attribute.
-	 *
-	 * @return Attribute value.
-	 */
-	public Object getBean() {
-
-		return this.bean;
-	}
-
-	/**
-	 * Set "bean" attribute.
-	 *
-	 * @param bean Attribute value.
-	 */
-	public void setBean(final Object bean) {
-
-		this.bean = bean;
-	}
-
-	/**
-	 * Get "beanField" attribute.
-	 *
-	 * @return Attribute value.
-	 */
-	public String getBeanField() {
-
-		return this.beanField;
-	}
-
-	/**
-	 * Set "beanField" attribute.
-	 *
-	 * @param beanField Attribute value.
-	 */
-	public void setBeanField(final String beanField) {
-
-		this.beanField = beanField;
-	}
-
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.TagSupport#doStartTag()
+	 * @see com.boylesoftware.web.jsp.AbstractInputTag#doStartTag()
 	 */
+	@SuppressWarnings("resource")
 	@Override
-	public int doStartTag() {
+	public int doStartTag()
+		throws JspException {
 
-		return SKIP_BODY;
+		super.doStartTag();
+
+		int res = SKIP_BODY;
+
+		final JspWriter out = this.pageContext.getOut();
+		try {
+			switch (this.type) {
+
+			case "textarea":
+				out.print("<textarea");
+				this.printCommonAttrs(out, true);
+				out.print(">");
+				if (this.inputValue != null)
+					out.print(Utils.escapeHtml(this.inputValue));
+				out.print("</textarea>");
+				break;
+
+			case "checkbox":
+				out.print("<input type=\"checkbox\"");
+				this.printCommonAttrs(out, false);
+				out.print(" value=\"true\"");
+				if ("true".equals(this.inputValue))
+					out.print(" checked=\"checked\"");
+				out.print("/>");
+				break;
+
+			case "password":
+				out.print("<input type=\"");
+				out.print(this.type);
+				out.print("\"");
+				this.printCommonAttrs(out, true);
+				out.print("/>");
+				break;
+
+			case "select":
+				out.print("<select");
+				this.printCommonAttrs(out, true);
+				out.print(">");
+				res = EVAL_BODY_INCLUDE;
+				break;
+
+			case "radios":
+				res = EVAL_BODY_INCLUDE;
+				break;
+
+			default:
+				out.print("<input type=\"");
+				out.print(this.type);
+				out.print("\"");
+				this.printCommonAttrs(out, true);
+				out.print(" value=\"");
+				if (this.inputValue != null)
+					out.print(Utils.escapeHtmlAttr(this.inputValue));
+				out.print("\"");
+				out.print("/>");
+			}
+
+		} catch (final IOException e) {
+			throw new JspException(e);
+		}
+
+		if (res != SKIP_BODY)
+			this.pageContext.setAttribute("inputValue", this.inputValue);
+
+		return res;
 	}
 
 	/* (non-Javadoc)
@@ -196,148 +161,37 @@ public class InputTag
 	public int doEndTag()
 		throws JspException {
 
-		final FormTag formTag =
-			(FormTag) findAncestorWithClass(this, FormTag.class);
-
-		final String beanField =
-			(this.beanField != null ? this.beanField : this.name);
-		Class<?> beanClass = null;
-		String val = null;
-		if (this.bean == null) {
-			final Object formBean = formTag.getBean();
-			if (formBean != null)
-				beanClass = formBean.getClass();
-			val = this.getValue(formBean, beanField);
-		} else if (this.bean instanceof String) {
-			if (!this.bean.equals("none")) {
-				try {
-					beanClass = Class.forName((String) this.bean);
-					val = this.getValue(null, beanField);
-				} catch (final ClassNotFoundException e) {
-					throw new JspException(e);
-				}
+		if (this.type.equals("select")) {
+			final JspWriter out = this.pageContext.getOut();
+			try {
+				out.print("</select>");
+			} catch (final IOException e) {
+				throw new JspException(e);
 			}
-		} else {
-			beanClass = this.bean.getClass();
-			val = this.getValue(this.bean, beanField);
-		}
-
-		final JspWriter out = this.pageContext.getOut();
-		try {
-			switch (this.type) {
-
-			case "textarea":
-				out.print("<textarea");
-				this.printAttrs(out, formTag, beanClass, beanField, true);
-				out.print(">");
-				if (val != null)
-					out.print(Utils.escapeHtml(val));
-				out.print("</textarea>");
-				break;
-
-			case "checkbox":
-				out.print("<input type=\"checkbox\"");
-				this.printAttrs(out, formTag, beanClass, beanField, false);
-				out.print(" value=\"true\"");
-				if ("true".equals(val))
-					out.print(" checked=\"checked\"");
-				out.print("/>");
-				break;
-
-			case "password":
-				out.print("<input type=\"");
-				out.print(this.type);
-				out.print("\"");
-				this.printAttrs(out, formTag, beanClass, beanField, true);
-				out.print("/>");
-				break;
-
-			default:
-				out.print("<input type=\"");
-				out.print(this.type);
-				out.print("\"");
-				this.printAttrs(out, formTag, beanClass, beanField, true);
-				out.print(" value=\"");
-				if (val != null)
-					out.print(Utils.escapeHtmlAttr(val));
-				out.print("\"");
-				out.print("/>");
-			}
-
-		} catch (final IOException e) {
-			throw new JspException(e);
 		}
 
 		return EVAL_PAGE;
 	}
 
-	/**
-	 * Print common attributes.
-	 *
-	 * @param out The output.
-	 * @param formTag The parent form tag.
-	 * @param beanClass The backing bean class, or {@code null}.
-	 * @param beanField The backing bean field name.
-	 * @param checkRequired {@code true} to analyze the bean field and determine
-	 * if the input field needs to have a "required" attribute.
-	 *
-	 * @throws IOException If an I/O error happens writing to the output.
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.jsp.AbstractInputTag#printCommonAttrs(javax.servlet.jsp.JspWriter, boolean)
 	 */
-	private void printAttrs(final JspWriter out, final FormTag formTag,
-			final Class<?> beanClass, final String beanField,
+	@Override
+	protected void printCommonAttrs(final JspWriter out,
 			final boolean checkRequired)
 		throws IOException {
 
-		out.print(" id=\"");
-		out.print(formTag.getId());
-		out.print("_");
-		out.print(this.name);
-		out.print("\"");
+		super.printCommonAttrs(out, checkRequired);
 
-		out.print(" name=\"");
-		out.print(this.name);
-		out.print("\"");
-
-		if (formTag.isHtml5() && this.name.equals(formTag.getFocusFieldName()))
-			out.print(" autofocus=\"autofocus\"");
-
-		if ((beanClass != null) && VARLEN_TYPES.contains(this.type)) {
+		if ((this.beanClass != null) && VARLEN_TYPES.contains(this.type)) {
 			final int colLen =
-				EntityUtils.getColumnLength(beanClass, beanField);
+				EntityUtils.getColumnLength(this.beanClass, this.beanField);
 			if (colLen < Integer.MAX_VALUE) {
 				out.print(" maxlength=\"");
 				out.print(colLen);
 				out.print("\"");
 			}
 		}
-
-		if (Boolean.parseBoolean(this.required) ||
-				((this.required == null) && (beanClass != null) &&
-					checkRequired &&
-						!EntityUtils.isColumnNullable(beanClass, beanField)))
-			out.print(" required=\"required\"");
-	}
-
-	/**
-	 * Get current input field value either from the request parameters or from
-	 * the backing bean.
-	 *
-	 * @param bean The backing bean, or {@code null}.
-	 * @param beanField The backing bean field name.
-	 *
-	 * @return The value, or {@code null}.
-	 */
-	private String getValue(final Object bean, final String beanField) {
-
-		String val =
-			this.pageContext.getRequest().getParameter(this.name);
-		if ((val == null) && (bean != null)) {
-			final Object valObj =
-				EntityUtils.getFieldValue(bean, beanField);
-			if (valObj != null)
-				val = valObj.toString();
-		}
-
-		return val;
 	}
 }

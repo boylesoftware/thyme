@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.BodyTagSupport;
+import javax.servlet.jsp.tagext.TagSupport;
 
 
 /**
@@ -29,7 +29,7 @@ import javax.servlet.jsp.tagext.BodyTagSupport;
  * @author Lev Himmelfarb
  */
 public class LabelTag
-	extends BodyTagSupport {
+	extends TagSupport {
 
 	/**
 	 * Serial version id.
@@ -65,7 +65,7 @@ public class LabelTag
 
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doStartTag()
+	 * @see javax.servlet.jsp.tagext.TagSupport#doStartTag()
 	 */
 	@SuppressWarnings("resource")
 	@Override
@@ -95,7 +95,7 @@ public class LabelTag
 	}
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doEndTag()
+	 * @see javax.servlet.jsp.tagext.TagSupport#doEndTag()
 	 */
 	@SuppressWarnings("resource")
 	@Override

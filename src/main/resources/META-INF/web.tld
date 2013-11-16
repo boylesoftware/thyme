@@ -69,14 +69,16 @@
 	<tag>
 		<name>input</name>
 		<tag-class>com.boylesoftware.web.jsp.InputTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>type</name>
-			<required>true</required>
-		</attribute>
+		<body-content>scriptless</body-content>
+		<variable>
+			<name-given>inputValue</name-given>
+		</variable>
 		<attribute>
 			<name>name</name>
 			<required>true</required>
+		</attribute>
+		<attribute>
+			<name>type</name>
 		</attribute>
 		<attribute>
 			<name>bean</name>
@@ -87,6 +89,25 @@
 		</attribute>
 		<attribute>
 			<name>required</name>
+		</attribute>
+	</tag>
+
+	<tag>
+		<name>options</name>
+		<tag-class>com.boylesoftware.web.jsp.OptionsTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>options</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>optionValueExpr</name>
+			<deferred-value/>
+		</attribute>
+		<attribute>
+			<name>optionLabelExpr</name>
+			<deferred-value/>
 		</attribute>
 	</tag>
 

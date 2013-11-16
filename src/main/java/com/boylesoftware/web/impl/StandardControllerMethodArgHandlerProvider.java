@@ -495,8 +495,12 @@ public class StandardControllerMethodArgHandlerProvider
 					final Class<?> paramType, final Annotation[] paramAnnos)
 				throws UnavailableException {
 
-				if (!paramType.equals(Session.class))
+				try {
+					if (!paramType.equals(Session.class))
+						return null;
+				} catch (final NoClassDefFoundError e) {
 					return null;
+				}
 
 				if (appServices.getMailSession() == null)
 					throw new UnavailableException(

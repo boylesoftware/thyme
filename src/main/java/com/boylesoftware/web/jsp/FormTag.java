@@ -20,7 +20,7 @@ import java.io.IOException;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
-import javax.servlet.jsp.tagext.BodyTagSupport;
+import javax.servlet.jsp.tagext.TagSupport;
 
 import com.boylesoftware.web.UserInputError;
 import com.boylesoftware.web.api.Attributes;
@@ -33,7 +33,7 @@ import com.boylesoftware.web.api.UserInputErrors;
  * @author Lev Himmelfarb
  */
 public class FormTag
-	extends BodyTagSupport {
+	extends TagSupport {
 
 	/**
 	 * Serial version id.
@@ -186,7 +186,7 @@ public class FormTag
 
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doStartTag()
+	 * @see javax.servlet.jsp.tagext.TagSupport#doStartTag()
 	 */
 	@SuppressWarnings("resource")
 	@Override
@@ -239,9 +239,8 @@ public class FormTag
 		return EVAL_BODY_INCLUDE;
 	}
 
-
 	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doEndTag()
+	 * @see javax.servlet.jsp.tagext.TagSupport#doEndTag()
 	 */
 	@SuppressWarnings("resource")
 	@Override

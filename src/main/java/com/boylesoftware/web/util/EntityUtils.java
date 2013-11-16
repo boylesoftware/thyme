@@ -15,13 +15,7 @@
  */
 package com.boylesoftware.web.util;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -41,12 +35,6 @@ import javax.persistence.TemporalType;
 public final class EntityUtils {
 
 	/**
-	 * Cached getters for entity fields.
-	 */
-	private static final ConcurrentMap<String, Method> READ_METHODS =
-		new ConcurrentHashMap<>();
-
-	/**
 	 * Cached entity fields.
 	 */
 	private static final ConcurrentMap<String, Field> FIELDS =
@@ -58,60 +46,6 @@ public final class EntityUtils {
 	 */
 	private EntityUtils() {}
 
-
-	/**
-	 * Get entity field value.
-	 *
-	 * @param entity The entity object.
-	 * @param fieldName Field name.
-	 *
-	 * @return Field value.
-	 *
-	 * @throws IllegalArgumentException If field does not exist or is not
-	 * readable.
-	 */
-	public static Object getFieldValue(final Object entity,
-			final String fieldName) {
-
-		final String cacheKey = entity.getClass().getName() + "#" + fieldName;
-		Method readMethod = READ_METHODS.get(cacheKey);
-		if (readMethod == null) {
-			try {
-				final BeanInfo bi =
-					Introspector.getBeanInfo(entity.getClass(), Object.class);
-
-				PropertyDescriptor fieldDesc = null;
-				for (PropertyDescriptor pd : bi.getPropertyDescriptors()) {
-					if (pd.getName().equals(fieldName)) {
-						fieldDesc = pd;
-						break;
-					}
-				}
-				if (fieldDesc == null)
-					throw new IllegalArgumentException("Property " + fieldName +
-							" not found in bean class " +
-							entity.getClass().getName() + ".");
-
-				readMethod = fieldDesc.getReadMethod();
-				if (readMethod == null)
-					throw new IllegalArgumentException("Property " + fieldName +
-							" in bean class " + entity.getClass().getName() +
-							" is not readable.");
-
-				READ_METHODS.putIfAbsent(cacheKey, readMethod);
-
-			} catch (final IntrospectionException e) {
-				throw new RuntimeException("Error introspecting entity object.",
-						e);
-			}
-		}
-
-		try {
-			return readMethod.invoke(entity);
-		} catch (final InvocationTargetException | IllegalAccessException e) {
-			throw new RuntimeException("Error getting entity field value.", e);
-		}
-	}
 
 	/**
 	 * Get field maximum length using its {@link Column} annotation. If the
