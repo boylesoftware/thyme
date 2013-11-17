@@ -76,4 +76,22 @@ public @interface Fits {
 	 * @return The target field name.
 	 */
 	String field();
+
+
+	/**
+	 * Constraints list.
+	 */
+	@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER,
+		ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	@interface List {
+
+		/**
+		 * The constraints list.
+		 *
+		 * @return The constraints list.
+		 */
+		Fits[] value();
+	}
 }

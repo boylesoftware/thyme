@@ -77,4 +77,22 @@ public @interface StrongPassword {
 	 */
 	String[] mustContain() default
 		{ "\\p{Lower}", "\\p{Upper}", "\\p{Digit}|\\p{Punct}" };
+
+
+	/**
+	 * Constraints list.
+	 */
+	@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER,
+		ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	@interface List {
+
+		/**
+		 * The constraints list.
+		 *
+		 * @return The constraints list.
+		 */
+		StrongPassword[] value();
+	}
 }

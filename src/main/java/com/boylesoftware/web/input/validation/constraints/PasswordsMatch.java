@@ -60,4 +60,21 @@ public @interface PasswordsMatch {
 	 * @return Constraint payload.
 	 */
 	Class<? extends Payload>[] payload() default {};
+
+
+	/**
+	 * Constraints list.
+	 */
+	@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	@interface List {
+
+		/**
+		 * The constraints list.
+		 *
+		 * @return The constraints list.
+		 */
+		PasswordsMatch[] value();
+	}
 }

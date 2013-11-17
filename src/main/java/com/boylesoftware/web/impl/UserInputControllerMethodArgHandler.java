@@ -43,8 +43,10 @@ import com.boylesoftware.web.input.Binder;
 import com.boylesoftware.web.input.BindingException;
 import com.boylesoftware.web.input.NoTrim;
 import com.boylesoftware.web.input.binders.BooleanBinder;
+import com.boylesoftware.web.input.binders.EnumBinder;
 import com.boylesoftware.web.input.binders.IntegerBinder;
 import com.boylesoftware.web.input.binders.StringBinder;
+import com.boylesoftware.web.input.validation.DynamicValidationGroups;
 import com.boylesoftware.web.spi.RouterRequest;
 import com.boylesoftware.web.spi.UserInputHandler;
 import com.boylesoftware.web.util.StringUtils;
@@ -250,7 +252,7 @@ class UserInputControllerMethodArgHandler
 	 * @param validatorFactory Validator factory.
 	 * @param beanClass User input bean class.
 	 * @param validationGroups Validation groups to apply during bean
-	 * validation.
+	 * validation, or empty array to use the default group.
 	 *
 	 * @throws UnavailableException If an error happens.
 	 */
@@ -314,6 +316,8 @@ class UserInputControllerMethodArgHandler
 					else if ((Integer.class).isAssignableFrom(propType) ||
 							propType.equals(Integer.TYPE))
 						binderClass = IntegerBinder.class;
+					else if (propType.isEnum())
+						binderClass = EnumBinder.class;
 					else // TODO: add more standard binders
 						throw new UnavailableException(
 								"Unsupported user input bean field type " +
@@ -402,8 +406,14 @@ class UserInputControllerMethodArgHandler
 					.usingContext()
 					.messageInterpolator(request.getMessageInterpolator())
 					.getValidator();
+			Class<?>[] validationGroups = this.validationGroups;
+			if ((this.validationGroups.length == 0) &&
+					(bean instanceof DynamicValidationGroups))
+				validationGroups =
+					((DynamicValidationGroups) bean).getValidationGroups(
+							request);
 			final Set<ConstraintViolation<Object>> cvs =
-				validator.validate(bean, this.validationGroups);
+				validator.validate(bean, validationGroups);
 			final boolean valid = cvs.isEmpty();
 			if (!valid) {
 				for (final ConstraintViolation<Object> cv : cvs)

@@ -21,6 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.boylesoftware.web.input.validation.DynamicValidationGroups;
+
 
 /**
  * Used to mark user input beans (such as beans behind HTML forms) in the list
@@ -34,7 +36,9 @@ import java.lang.annotation.Target;
 public @interface UserInput {
 
 	/**
-	 * Constraint groups to apply during validation.
+	 * Constraint groups to apply during validation. If the annotated user input
+	 * bean implements {@link DynamicValidationGroups}, the groups specified by
+	 * this annotation override the dynamic groups.
 	 *
 	 * @return Constraint groups to apply during validation.
 	 */

@@ -15,6 +15,8 @@
  */
 package com.boylesoftware.web.stk;
 
+import java.io.Serializable;
+
 import javax.validation.constraints.NotNull;
 
 import com.boylesoftware.web.input.NoTrim;
@@ -25,7 +27,14 @@ import com.boylesoftware.web.input.NoTrim;
  *
  * @author Lev Himmelfarb
  */
-public class LoginData {
+public class LoginData
+	implements Serializable {
+
+	/**
+	 * Serial version id.
+	 */
+	private static final long serialVersionUID = 1L;
+
 
 	/**
 	 * User login name.

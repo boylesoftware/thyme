@@ -15,31 +15,24 @@
  */
 package com.boylesoftware.web.spi;
 
-import java.util.Locale;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.MessageInterpolator;
 
-import com.boylesoftware.web.api.Attributes;
 import com.boylesoftware.web.api.Authenticator;
 import com.boylesoftware.web.api.FlashAttributes;
+import com.boylesoftware.web.api.RouterRequestContext;
 import com.boylesoftware.web.api.UserInputErrors;
 
 
 /**
- * HTTP servlet request that matched a certain router mapping and is ready to be
- * processed by the framework request processing logic.
- *
- * <p>On top of the additional methods, the router request implementation
- * modifies the behavior of some of the original request's methods. Namely,
- * methods that return request parameters include parameters coming from the
- * mapping's URI pattern.
+ * Extended SPI version of the {@link RouterRequestContext} interface used by
+ * the framework and framework component implementations.
  *
  * @author Lev Himmelfarb
  */
 public interface RouterRequest
-	extends HttpServletRequest {
+	extends RouterRequestContext {
 
 	/**
 	 * Get route associated with the request.
@@ -49,13 +42,6 @@ public interface RouterRequest
 	Route getRoute();
 
 	/**
-	 * Get response object associated with the request.
-	 *
-	 * @return The response.
-	 */
-	HttpServletResponse getResponse();
-
-	/**
 	 * Tell if processing of the request requires an authenticated user. The
 	 * implementation must not take into account the route's security mode,
 	 * which is processed by the framework separately.
@@ -63,19 +49,6 @@ public interface RouterRequest
 	 * @return {@code true} if an authenticated user is required.
 	 */
 	boolean isAuthenticationRequired();
-
-	/**
-	 * Get authenticated user associated with the request. Normally, the method
-	 * simply attempts to get the authenticated user from the
-	 * {@link Attributes#AUTHED_USER} request attribute.
-	 *
-	 * @param <T> Authenticated user object class. This is the class of the
-	 * object returned by the {@link AuthenticationService#getAuthenticatedUser}
-	 * method.
-	 *
-	 * @return Authenticated user, or {@code null} if the request is anonymous.
-	 */
-	<T> T getAuthenticatedUser();
 
 	/**
 	 * Get authenticator API.
@@ -95,18 +68,6 @@ public interface RouterRequest
 	 * have custom logic for the request's HTTP method.
 	 */
 	ControllerMethodHandler getControllerMethodHandler();
-
-	/**
-	 * Get user locale. As opposed to the {@link #getLocale()} method, this
-	 * method uses configured {@link UserLocaleFinder}. If there is a
-	 * {@link Locale} argument in a controller method's argument list, this is
-	 * the locale passed to the controller.
-	 *
-	 * @return User locale, if request has an authenticated user, or the locale
-	 * provided by the user agent, the same returned by {@link #getLocale()}
-	 * method.
-	 */
-	Locale getUserLocale();
 
 	/**
 	 * Get request validation message interpolator. The interpolator is used

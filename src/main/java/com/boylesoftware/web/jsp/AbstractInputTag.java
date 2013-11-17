@@ -47,7 +47,7 @@ public abstract class AbstractInputTag
 	/**
 	 * Entity bean behind the input, if any.
 	 */
-	protected Object bean;
+	private Object beanAttr;
 
 	/**
 	 * Entity bean field name if different from the input field name.
@@ -87,7 +87,7 @@ public abstract class AbstractInputTag
 	 */
 	public Object getBean() {
 
-		return this.bean;
+		return this.beanAttr;
 	}
 
 	/**
@@ -97,7 +97,7 @@ public abstract class AbstractInputTag
 	 */
 	public void setBean(final Object bean) {
 
-		this.bean = bean;
+		this.beanAttr = bean;
 	}
 
 	/**
@@ -148,6 +148,12 @@ public abstract class AbstractInputTag
 	protected FormTag formTag;
 
 	/**
+	 * Entity bean behind the input, or {@code null}. Initialized in the
+	 * {@link #doStartTag()} method.
+	 */
+	protected Object bean;
+
+	/**
 	 * Name of the bean field corresponding to the input field, or {@code null}.
 	 * Initialized in the {@link #doStartTag()} method.
 	 */
@@ -186,23 +192,23 @@ public abstract class AbstractInputTag
 
 		this.beanClass = null;
 		this.inputValue = null;
-		if (this.bean == null) {
-			final Object formBean = this.formTag.getBean();
-			if (formBean != null)
-				this.beanClass = formBean.getClass();
-			this.inputValue = this.getValue(formBean, this.beanField);
-		} else if (this.bean instanceof String) {
+		this.bean =
+			(this.beanAttr != null ? this.beanAttr : this.formTag.getBean());
+		if (this.bean instanceof String) {
 			if (!this.bean.equals("none")) {
 				try {
 					this.beanClass = Class.forName((String) this.bean);
-					this.inputValue = this.getValue(null, this.beanField);
 				} catch (final ClassNotFoundException e) {
 					throw new JspException(e);
 				}
 			}
-		} else {
+			this.inputValue = this.getValue(null, this.beanField);
+			this.bean = null;
+		} else if (this.bean != null) {
 			this.beanClass = this.bean.getClass();
 			this.inputValue = this.getValue(this.bean, this.beanField);
+		} else {
+			this.inputValue = this.getValue(null, this.beanField);
 		}
 
 		this.required = Boolean.parseBoolean(this.requiredAttr) ||

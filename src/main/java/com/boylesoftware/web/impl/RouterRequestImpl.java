@@ -357,6 +357,39 @@ class RouterRequestImpl
 
 
 	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.api.RouterRequestContext#getResponse()
+	 */
+	@Override
+	public HttpServletResponse getResponse() {
+
+		return this.response;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.api.RouterRequestContext#getAuthenticatedUser()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getAuthenticatedUser() {
+
+		return (T) this.getAttribute(Attributes.AUTHED_USER);
+	}
+
+	/* (non-Javadoc)
+	 * @see com.boylesoftware.web.api.RouterRequestContext#getUserLocale()
+	 */
+	@Override
+	public Locale getUserLocale() {
+
+		if (this.userLocale == null)
+			this.userLocale = this.userLocaleFinder.getLocale(this,
+					this.getAuthenticatedUser());
+
+		return this.userLocale;
+	}
+
+
+	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.spi.RouterRequest#getRoute()
 	 */
 	@Override
@@ -366,31 +399,12 @@ class RouterRequestImpl
 	}
 
 	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.RouterRequest#getResponse()
-	 */
-	@Override
-	public HttpServletResponse getResponse() {
-
-		return this.response;
-	}
-
-	/* (non-Javadoc)
 	 * @see com.boylesoftware.web.spi.RouterRequest#isAuthenticationRequired()
 	 */
 	@Override
 	public boolean isAuthenticationRequired() {
 
 		return this.authRequired;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.RouterRequest#getAuthenticatedUser()
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getAuthenticatedUser() {
-
-		return (T) this.getAttribute(Attributes.AUTHED_USER);
 	}
 
 	/* (non-Javadoc)
@@ -410,19 +424,6 @@ class RouterRequestImpl
 	public ControllerMethodHandler getControllerMethodHandler() {
 
 		return this.controllerMethodHandler;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.boylesoftware.web.spi.RouterRequest#getUserLocale()
-	 */
-	@Override
-	public Locale getUserLocale() {
-
-		if (this.userLocale == null)
-			this.userLocale = this.userLocaleFinder.getLocale(this,
-					this.getAuthenticatedUser());
-
-		return this.userLocale;
 	}
 
 	/* (non-Javadoc)
