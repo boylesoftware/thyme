@@ -42,6 +42,11 @@ public class LabelTag
 	 */
 	private String name;
 
+	/**
+	 * CSS class name.
+	 */
+	private String cssClass;
+
 
 	/**
 	 * Get "name" attribute.
@@ -61,6 +66,26 @@ public class LabelTag
 	public void setName(String name) {
 
 		this.name = name;
+	}
+
+	/**
+	 * Get CSS class.
+	 *
+	 * @return CSS class name.
+	 */
+	public String getCssClass() {
+
+		return this.cssClass;
+	}
+
+	/**
+	 * Set CSS class.
+	 *
+	 * @param cssClass CSS class name.
+	 */
+	public void setCssClass(final String cssClass) {
+
+		this.cssClass = cssClass;
 	}
 
 
@@ -84,6 +109,12 @@ public class LabelTag
 			out.print("_");
 			out.print(this.name);
 			out.print("\"");
+
+			if (this.cssClass != null) {
+				out.print(" class=\"");
+				out.print(this.cssClass);
+				out.print("\"");
+			}
 
 			out.print(">");
 

@@ -45,6 +45,11 @@ public abstract class AbstractInputTag
 	protected String inputName;
 
 	/**
+	 * CSS class name.
+	 */
+	protected String cssClass;
+
+	/**
 	 * Entity bean behind the input, if any.
 	 */
 	private Object beanAttr;
@@ -78,6 +83,26 @@ public abstract class AbstractInputTag
 	public void setName(final String name) {
 
 		this.inputName = name;
+	}
+
+	/**
+	 * Get CSS class.
+	 *
+	 * @return CSS class name.
+	 */
+	public String getCssClass() {
+
+		return this.cssClass;
+	}
+
+	/**
+	 * Set CSS class.
+	 *
+	 * @param cssClass CSS class name.
+	 */
+	public void setCssClass(final String cssClass) {
+
+		this.cssClass = cssClass;
 	}
 
 	/**
@@ -265,6 +290,12 @@ public abstract class AbstractInputTag
 		out.print(" name=\"");
 		out.print(this.inputName);
 		out.print("\"");
+
+		if (this.cssClass != null) {
+			out.print(" class=\"");
+			out.print(this.cssClass);
+			out.print("\"");
+		}
 
 		if (this.formTag.isHtml5() &&
 				this.inputName.equals(this.formTag.getFocusFieldName()))

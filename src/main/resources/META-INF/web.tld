@@ -64,6 +64,9 @@
 			<name>name</name>
 			<required>true</required>
 		</attribute>
+		<attribute>
+			<name>cssClass</name>
+		</attribute>
 	</tag>
 
 	<tag>
@@ -76,6 +79,9 @@
 		<attribute>
 			<name>name</name>
 			<required>true</required>
+		</attribute>
+		<attribute>
+			<name>cssClass</name>
 		</attribute>
 		<attribute>
 			<name>type</name>
