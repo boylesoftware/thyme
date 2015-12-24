@@ -90,7 +90,7 @@ You will also have to provide your application with a JPA and Bean Validation fr
 
 Note that Hibernate supports JPA version 2.1 only starting from version 4.3.0.
 
-See [http://www.hibernate.org/].
+See http://www.hibernate.org/.
 
 ##### EclipseLink
 
@@ -103,7 +103,7 @@ See [http://www.hibernate.org/].
 </dependency>
 ```
 
-See [http://www.eclipse.org/eclipselink/].
+See http://www.eclipse.org/eclipselink/.
 
 ##### Apache OpenJPA
 
@@ -159,15 +159,15 @@ See [http://www.eclipse.org/eclipselink/].
 </dependencies>
 ```
 
-This example includes the build time entity enhancement (see [http://openjpa.apache.org/entity-enhancement.html]).
+This example includes the build time entity enhancement (see http://openjpa.apache.org/entity-enhancement.html).
 
-See [http://openjpa.apache.org/].
+See http://openjpa.apache.org/.
 
 #### Bean Validation Implementation
 
 ##### Hibernate
 
-A standard implementation is provided by Hibernate. See [http://www.hibernate.org/subprojects/validator.html].
+A standard implementation is provided by Hibernate. See http://www.hibernate.org/subprojects/validator.html.
 
 Here is a Maven dependency example:
 
@@ -192,11 +192,11 @@ The framework itself uses several configuration entries, some of which are requi
 
 The framework needs to know to which port(s) the application is listening for requests. The ports are used to generate appropriate URLs for the application pages.
 
-* **httpPort** *Required*
+* **httpPort** *(required)*
 
 	This is the port through which the application accepts plain HTTP requests.
 
-* **httpsPort** *Required*
+* **httpsPort** *(required)*
 
 	This is the port through which the application accepts secure HTTPS requests.
 
@@ -249,7 +249,7 @@ Different containers use different ways to bind values to JNDI environment entri
 </Context>
 ```
 
-See [http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Environment_Entries] for details.
+See http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Environment_Entries for details.
 
 Here is a similar example for [Jetty](http://www.eclipse.org/jetty/):
 
@@ -276,7 +276,7 @@ Here is a similar example for [Jetty](http://www.eclipse.org/jetty/):
 </Configure>
 ```
 
-See [http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-jndi-env-entries] for details.
+See http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-jndi-env-entries for details.
 
 #### The Database
 
@@ -309,7 +309,7 @@ The example above refers to a JNDI datasource, which also needs to be provided. 
 </resource-ref>
 ```
 
-And then the datasource needs to be provided by the container. See [http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#JDBC_Data_Sources] and [http://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html] for Apache Tomcat configuration and [http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-datasources] for Jetty.
+And then the datasource needs to be provided by the container. See http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#JDBC_Data_Sources and http://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html for Apache Tomcat configuration and http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-datasources for Jetty.
 
 #### JavaMail
 
@@ -323,11 +323,11 @@ If your application sends e-mails, Thyme can provide it with a [JavaMail](http:/
 </resource-ref>
 ```
 
-And then you configure the session in your container. See [http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#JavaMail_Sessions] for Apache Tomcat and [http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-mail-with-jndi] for Jetty.
+And then you configure the session in your container. See http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#JavaMail_Sessions for Apache Tomcat and http://www.eclipse.org/jetty/documentation/current/jndi-configuration.html#configuring-mail-with-jndi for Jetty.
 
 #### Development Environment
 
-During application development it is important to make it easy to view and test modifications quickly. In the past, Servlet containers were not very good at this. However, these days those issues have been addressed. All modern Servlet container implementations support automatic and manual application reload upon changes in the classes, libraries, and configuration. The JSPs, if used, are recompiled on the fly. In addition to this, containers include some features and tools that allow running your application from your project source tree without fully assembling it each time you change the source. For Apache Tomcat see [http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html] (or [http://tomcat.apache.org/tomcat-7.0-doc/config/context.html#Virtual_webapp] for version 7). For Jetty, see the Jetty Maven plugin: [http://www.eclipse.org/jetty/documentation/current/maven-and-jetty.html].
+During application development it is important to make it easy to view and test modifications quickly. In the past, Servlet containers were not very good at this. However, these days those issues have been addressed. All modern Servlet container implementations support automatic and manual application reload upon changes in the classes, libraries, and configuration. The JSPs, if used, are recompiled on the fly. In addition to this, containers include some features and tools that allow running your application from your project source tree without fully assembling it each time you change the source. For Apache Tomcat see http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html (or http://tomcat.apache.org/tomcat-7.0-doc/config/context.html#Virtual_webapp for version 7). For Jetty, see the Jetty Maven plugin: http://www.eclipse.org/jetty/documentation/current/maven-and-jetty.html.
 
 ## Application Development
 
@@ -733,7 +733,7 @@ This mapping instructs the router that if a request is received for URI "/home.h
 
 The string "/WEB-INF/jsp/html/home.jsp" in the example above is actually a view id, interpreted by the framework component called *view sender*, an implementation of the `com.boylesoftware.web.spi.ViewSender` interface. The default router configuration implementation uses view sender returned by `AbstractWebApplication`'s `getViewSender()` method. The `com.boylesoftware.web.impl.view.MultiplexViewSender` returned by default by the `getViewSender()` method is configured to recognize view technology by the view id pattern. It knows that if the view id ends with ".jsp", it should use `com.boylesoftware.web.impl.view.DispatchViewSender`, which handles JSPs.
 
-Often, view ids start with the same prefix. For example, all application JSPs may reside under "/WEB-INF/jsp/html". Instead of typing the prefix for each mapping, there is a statement that declares a view id prefix:
+Often, view ids start with the same prefix. For example, all application JSPs may reside under */WEB-INF/jsp/html*. Instead of typing the prefix for each mapping, there is a statement that declares a view id prefix:
 
 ```
 viewsBase: /WEB-INF/jsp/html/
@@ -1098,18 +1098,10 @@ From the framework's point of view, a controller can define up to four methods: 
 
 Method Name     | Method Return Type | Description
 ----------------|--------------------|------------
-**get**         | void               | Processes an HTTP "GET" request. After the method successfully returns, the view associated with the route is sent back to the client in a 200 "OK" HTTP response body. This method rarely needs to be implemented, as all the view preparation logic can be defined in the route and view scripts as well as in the `prepareView` controller method (see below). If the method is undefined in a controller, "GET" requests are processed without calling the controller.
-**post**        | java.lang.String   | Processes an HTTP "POST" request. The framework assumes that if the "POST" was processed successfully, the response sent back to the client is a redirect response (the framework sends a 303 "See Other" response). The method must return the redirect URI for the response's "Location" header. It can be a server-root relative URL starting with a "/" or an absolute URL.
-
-	The `post` controller method is the only method that allows a user input bean as one of its arguments (see about controller method arguments below). If the method needs to perform an in-transaction user input validation and the user input is invalid, the method can return `null` instead of a redirect URL and the framework will re-display the route's view in response (with the HTTP status code 400: "Bad Request").
-
-	If the method is undefined, any "POST" request to the mapped resource will result in a 405 "Method Not Allowed" response.
-
-**delete**      | java.lang.String   | Processes an HTTP "DELETE" request. As with the `post` method, this method returns a redirect URL upon success, or `null` to re-display the view with a 400 "Bad Request" response. Unlike the `post` method, `delete` does not allow a user input bean to be used as an argument.
-
-	As with `post`, if the method is undefined, any "DELETE" request to the mapped resource will result in a 405 "Method Not Allowed" response.
-
-**prepareView** | void               | Contains additional view preparation logic that could not be expressed in the view script. The method is called each time before the route's view needs to be sent back to the client (with either 200 or 400 HTTP response). If both the view script is defined for the route and the route's controller has a `prepareView` method, the `prepareView` method is called after the view script.
+**get**         | void               | <p>Processes an HTTP "GET" request. After the method successfully returns, the view associated with the route is sent back to the client in a 200 "OK" HTTP response body. This method rarely needs to be implemented, as all the view preparation logic can be defined in the route and view scripts as well as in the `prepareView` controller method (see below). If the method is undefined in a controller, "GET" requests are processed without calling the controller.</p>
+**post**        | java.lang.String   | <p>Processes an HTTP "POST" request. The framework assumes that if the "POST" was processed successfully, the response sent back to the client is a redirect response (the framework sends a 303 "See Other" response). The method must return the redirect URI for the response's "Location" header. It can be a server-root relative URL starting with a "/" or an absolute URL.</p><p>The `post` controller method is the only method that allows a user input bean as one of its arguments (see about controller method arguments below). If the method needs to perform an in-transaction user input validation and the user input is invalid, the method can return `null` instead of a redirect URL and the framework will re-display the route's view in response (with the HTTP status code 400: "Bad Request").</p><p>If the method is undefined, any "POST" request to the mapped resource will result in a 405 "Method Not Allowed" response.</p>
+**delete**      | java.lang.String   | <p>Processes an HTTP "DELETE" request. As with the `post` method, this method returns a redirect URL upon success, or `null` to re-display the view with a 400 "Bad Request" response. Unlike the `post` method, `delete` does not allow a user input bean to be used as an argument.</p><p>As with `post`, if the method is undefined, any "DELETE" request to the mapped resource will result in a 405 "Method Not Allowed" response.</p>
+**prepareView** | void               | <p>Contains additional view preparation logic that could not be expressed in the view script. The method is called each time before the route's view needs to be sent back to the client (with either 200 or 400 HTTP response). If both the view script is defined for the route and the route's controller has a `prepareView` method, the `prepareView` method is called after the view script.</p>
 
 Each method is called inside the request processing JPA transaction and is handled by an asynchronous request processing thread. The transaction and the thread are the same one used for the scripts.
 
